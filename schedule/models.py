@@ -1,11 +1,12 @@
+from datetime import timedelta
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.contrib.auth import get_user_model
 
 
 class ActiveModelsManager(models.Manager):
     def get_queryset(self):
-        return super(ActiveModelsManager, self).get_queryset().filter(is_active=True)
+        return super().get_queryset().filter(is_active=True)
 
 
 class Student(models.Model):
@@ -24,9 +25,7 @@ class Student(models.Model):
         blank=True,
         related_name="students",
     )
-
     lessons_count = models.IntegerField(null=False, default=0)
-
     user = models.ForeignKey(
         get_user_model(),
         null=False,
@@ -40,11 +39,11 @@ class Student(models.Model):
 
     def clean(self):
         super().clean()
-        if self.teacher and not self.teacher.is_teacher:
+        if self.teacher and not getattr(self.teacher, "is_teacher", False):
             raise ValidationError(
                 {"teacher": "User should have is_teacher=True attribute."}
             )
-        if not self.user.is_student:
+        if not getattr(self.user, "is_student", False):
             raise ValidationError(
                 {"user": "User should have is_student=True attribute."}
             )
@@ -67,7 +66,11 @@ class Student(models.Model):
 
 class Group(models.Model):
     name = models.CharField(null=False, max_length=255)
-
+    teacher = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name="groups",
+    )
     is_active = models.BooleanField(null=False, default=True)
 
     objects = models.Manager()
@@ -75,22 +78,34 @@ class Group(models.Model):
 
 
 class LessonStatusEnum(models.TextChoices):
-    PLANNED = "planned"
-    FINISHED = "finished"
-    CANCELED = "canceled"
+    PLANNED = "planned", "Planned"
+    FINISHED = "finished", "Finished"
+    CANCELED = "canceled", "Canceled"
 
 
-class Lesson(models.Model):
+class AttendanceStatusEnum(models.TextChoices):
+    PRESENT = "present", "Present"
+    ABSENT = "absent", "Absent"
+    SKIPPED = "skipped", "Skipped"
+
+
+class LessonAbstract(models.Model):
     start_datetime = models.DateTimeField(null=False)
-    duration = models.DurationField(null=False, default=60)
-    student = models.ForeignKey(
-        Student, on_delete=models.CASCADE, related_name="individual_lessons"
-    )
+    duration = models.DurationField(null=False, default=timedelta(minutes=60))
     status = models.CharField(
         null=False,
-        max_length=8,
-        choices=LessonStatusEnum,
+        max_length=10,
+        choices=LessonStatusEnum.choices,
         default=LessonStatusEnum.PLANNED,
+    )
+
+    class Meta:
+        abstract = True
+
+
+class Lesson(LessonAbstract):
+    student = models.ForeignKey(
+        Student, on_delete=models.CASCADE, related_name="individual_lessons"
     )
 
     @property
@@ -114,29 +129,140 @@ class Lesson(models.Model):
         student_user_id = student.user_id
 
         if teacher_id:
-            teacher_conflicts = Lesson.objects.filter(
+            ind_conflicts = Lesson.objects.filter(
                 student__teacher_id=teacher_id,
                 status=LessonStatusEnum.PLANNED,
                 start_datetime__lt=end_datetime,
             ).exclude(pk=self.pk)
 
-            for lesson in teacher_conflicts:
-                if lesson.start_datetime + lesson.duration > self.start_datetime:
+            for l in ind_conflicts:
+                if l.start_datetime + l.duration > self.start_datetime:
                     raise ValidationError(
-                        {"student": "Teacher already has lesson at this time."}
+                        {
+                            "student": "Teacher already has an individual lesson at this time."
+                        }
+                    )
+
+            grp_conflicts = GroupLesson.objects.filter(
+                group__teacher_id=teacher_id,
+                status=LessonStatusEnum.PLANNED,
+                start_datetime__lt=end_datetime,
+            )
+
+            for l in grp_conflicts:
+                if l.start_datetime + l.duration > self.start_datetime:
+                    raise ValidationError(
+                        {"student": "Teacher already has a group lesson at this time."}
                     )
 
         if student_user_id:
-            student_conflicts = Lesson.objects.filter(
+            ind_conflicts = Lesson.objects.filter(
                 student__user_id=student_user_id,
                 status=LessonStatusEnum.PLANNED,
                 start_datetime__lt=end_datetime,
             ).exclude(pk=self.pk)
 
-            for lesson in student_conflicts:
-                if lesson.start_datetime + lesson.duration > self.start_datetime:
+            for l in ind_conflicts:
+                if l.start_datetime + l.duration > self.start_datetime:
                     raise ValidationError(
-                        {"student": "Student already has lesson at this time."}
+                        {
+                            "student": "Student already has an individual lesson at this time."
+                        }
+                    )
+
+            grp_conflicts = GroupLesson.objects.filter(
+                group__students__user_id=student_user_id,
+                status=LessonStatusEnum.PLANNED,
+                start_datetime__lt=end_datetime,
+            )
+
+            for l in grp_conflicts:
+                if l.start_datetime + l.duration > self.start_datetime:
+                    raise ValidationError(
+                        {"student": "Student already has a group lesson at this time."}
+                    )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+class GroupLesson(LessonAbstract):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="lessons")
+    attendance_list = models.JSONField(null=False, default=list)
+
+    def clean(self):
+        super().clean()
+
+        if not self.start_datetime or not self.duration or not self.group_id:
+            return
+
+        end_datetime = self.start_datetime + self.duration
+
+        group = (
+            Group.objects.prefetch_related("students")
+            .only("teacher_id")
+            .get(pk=self.group_id)
+        )
+        teacher_id = group.teacher_id
+        student_user_ids = list(
+            group.students.values_list("user_id", flat=True).distinct()
+        )
+
+        if teacher_id:
+            ind_conflicts = Lesson.objects.filter(
+                student__teacher_id=teacher_id,
+                status=LessonStatusEnum.PLANNED,
+                start_datetime__lt=end_datetime,
+            )
+            for l in ind_conflicts:
+                if l.start_datetime + l.duration > self.start_datetime:
+                    raise ValidationError(
+                        {
+                            "group": "Teacher already has an individual lesson at this time."
+                        }
+                    )
+
+            grp_conflicts = GroupLesson.objects.filter(
+                group__teacher_id=teacher_id,
+                status=LessonStatusEnum.PLANNED,
+                start_datetime__lt=end_datetime,
+            ).exclude(pk=self.pk)
+
+            for l in grp_conflicts:
+                if l.start_datetime + l.duration > self.start_datetime:
+                    raise ValidationError(
+                        {
+                            "group": "Teacher already has another group lesson at this time."
+                        }
+                    )
+
+        if student_user_ids:
+            ind_conflicts = Lesson.objects.filter(
+                student__user_id__in=student_user_ids,
+                status=LessonStatusEnum.PLANNED,
+                start_datetime__lt=end_datetime,
+            )
+            for l in ind_conflicts:
+                if l.start_datetime + l.duration > self.start_datetime:
+                    raise ValidationError(
+                        {
+                            "group": f"One of group students (User ID: {l.student.user_id}) has an individual lesson at this time."
+                        }
+                    )
+
+            grp_conflicts = GroupLesson.objects.filter(
+                group__students__user_id__in=student_user_ids,
+                status=LessonStatusEnum.PLANNED,
+                start_datetime__lt=end_datetime,
+            ).exclude(pk=self.pk)
+
+            for l in grp_conflicts:
+                if l.start_datetime + l.duration > self.start_datetime:
+                    raise ValidationError(
+                        {
+                            "group": "One of group students has another group lesson at this time."
+                        }
                     )
 
     def save(self, *args, **kwargs):
