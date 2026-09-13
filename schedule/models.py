@@ -72,3 +72,73 @@ class Group(models.Model):
 
     objects = models.Manager()
     active_objects = ActiveModelsManager()
+
+
+class LessonStatusEnum(models.TextChoices):
+    PLANNED = "planned"
+    FINISHED = "finished"
+    CANCELED = "canceled"
+
+
+class Lesson(models.Model):
+    start_datetime = models.DateTimeField(null=False)
+    duration = models.DurationField(null=False, default=60)
+    student = models.ForeignKey(
+        Student, on_delete=models.CASCADE, related_name="individual_lessons"
+    )
+    status = models.CharField(
+        null=False,
+        max_length=8,
+        choices=LessonStatusEnum,
+        default=LessonStatusEnum.PLANNED,
+    )
+
+    @property
+    def teacher(self):
+        return self.student.teacher
+
+    def clean(self):
+        super().clean()
+
+        if not self.start_datetime or not self.duration or not self.student_id:
+            return
+
+        end_datetime = self.start_datetime + self.duration
+
+        student = (
+            Student.objects.select_related("teacher", "user")
+            .only("teacher_id", "user_id")
+            .get(pk=self.student_id)
+        )
+        teacher_id = student.teacher_id
+        student_user_id = student.user_id
+
+        if teacher_id:
+            teacher_conflicts = Lesson.objects.filter(
+                student__teacher_id=teacher_id,
+                status=LessonStatusEnum.PLANNED,
+                start_datetime__lt=end_datetime,
+            ).exclude(pk=self.pk)
+
+            for lesson in teacher_conflicts:
+                if lesson.start_datetime + lesson.duration > self.start_datetime:
+                    raise ValidationError(
+                        {"student": "Teacher already has lesson at this time."}
+                    )
+
+        if student_user_id:
+            student_conflicts = Lesson.objects.filter(
+                student__user_id=student_user_id,
+                status=LessonStatusEnum.PLANNED,
+                start_datetime__lt=end_datetime,
+            ).exclude(pk=self.pk)
+
+            for lesson in student_conflicts:
+                if lesson.start_datetime + lesson.duration > self.start_datetime:
+                    raise ValidationError(
+                        {"student": "Student already has lesson at this time."}
+                    )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
