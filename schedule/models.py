@@ -69,7 +69,7 @@ class Group(models.Model):
     teacher = models.ForeignKey(
         get_user_model(),
         on_delete=models.CASCADE,
-        related_name="groups",
+        related_name="tutoring_groups",
     )
     is_active = models.BooleanField(null=False, default=True)
 
@@ -193,6 +193,32 @@ class GroupLesson(LessonAbstract):
 
     def clean(self):
         super().clean()
+
+        if not isinstance(self.attendance_list, list):
+            raise ValidationError(
+                {"attendance_list": "Attendance must be a list of objects."}
+            )
+
+        valid_statuses = set(AttendanceStatusEnum.values)
+
+        for record in self.attendance_list:
+            if (
+                not isinstance(record, dict)
+                or "student_id" not in record
+                or "status" not in record
+            ):
+                raise ValidationError(
+                    {
+                        "attendance_list": "Each item must contain 'student_id' and 'status'."
+                    }
+                )
+
+            if record["status"] not in valid_statuses:
+                raise ValidationError(
+                    {
+                        "attendance_list": f"Invalid status '{record['status']}'. Allowed: {valid_statuses}"
+                    }
+                )
 
         if not self.start_datetime or not self.duration or not self.group_id:
             return
