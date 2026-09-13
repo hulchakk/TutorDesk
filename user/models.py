@@ -27,6 +27,18 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_superuser", False)
         return self._create_user(email, password, **extra_fields)
 
+    def create_teacher(self, email, password, **extra_fields):
+        """Create and save a teacher User with the given email and password."""
+        extra_fields.setdefault("is_teacher", True)
+        extra_fields.setdefault("is_student", False)
+        return self.create_user(email, password, **extra_fields)
+
+    def create_student(self, email, password, **extra_fields):
+        """Create and save a student User with the given email and password."""
+        extra_fields.setdefault("is_student", True)
+        extra_fields.setdefault("is_teacher", False)
+        return self.create_user(email, password, **extra_fields)
+
     def create_superuser(self, email, password, **extra_fields):
         """Create and save a SuperUser with the given email and password."""
         extra_fields.setdefault("is_staff", True)
