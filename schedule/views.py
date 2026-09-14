@@ -1,5 +1,7 @@
+from django.shortcuts import redirect, render
 from django.views.generic import ListView
 
+from schedule.forms import StudentCreateForm
 from schedule.models import Student
 
 
@@ -14,3 +16,25 @@ class StudentsView(ListView):
         queryset = queryset.filter(teacher=self.request.user)
 
         return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if "form" not in context:
+            context["form"] = StudentCreateForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = StudentCreateForm(request.POST)
+        if form.is_valid():
+            student = form.save(commit=False)
+            student.teacher = request.user
+            student.save()
+            return redirect("schedule:students")
+
+        self.object_list = self.get_queryset()
+        return render(
+            request,
+            self.template_name,
+            self.get_context_data(form=form),
+        )

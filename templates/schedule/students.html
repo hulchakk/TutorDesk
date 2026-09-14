@@ -5,6 +5,18 @@
 {% endblock %}
 
 {% block content %}
+  <form method="post" action="{% url 'schedule:students' %}">
+    {% csrf_token %}
+    <label>
+      Student name:
+      {{ form.name }}
+    </label>
+    <label>
+      Price per lesson:
+      {{ form.lessons_price }}
+    </label>
+    <input type="submit" value="Create">
+  </form>
   <table>
     <tr>
       <th>Name</th>
@@ -14,6 +26,7 @@
     <tr>
       <td>{{ student.name }}</td>
       <td>{{ student.lessons_count }}</td>
+      <td>{{ student.lessons_price }}</td>
     </tr>
     {% endfor %}
   </table>
