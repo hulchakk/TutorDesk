@@ -26,9 +26,13 @@ class Student(models.Model):
         related_name="students",
     )
     lessons_count = models.IntegerField(null=False, default=0)
+    lessons_price = models.DecimalField(
+        null=False, max_digits=10, decimal_places=2, default=600
+    )
     user = models.ForeignKey(
         get_user_model(),
-        null=False,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
         related_name="student_profiles",
     )
@@ -43,7 +47,7 @@ class Student(models.Model):
             raise ValidationError(
                 {"teacher": "User should have is_teacher=True attribute."}
             )
-        if not getattr(self.user, "is_student", False):
+        if self.user and not getattr(self.user, "is_student", False):
             raise ValidationError(
                 {"user": "User should have is_student=True attribute."}
             )
@@ -60,7 +64,13 @@ class Student(models.Model):
                     | (models.Q(group__isnull=True) & models.Q(teacher__isnull=False))
                 ),
                 name="exactly_one_of_group_or_teacher",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=("group", "name"), name="unique_student_in_group"
+            ),
+            models.UniqueConstraint(
+                fields=("teacher", "name"), name="unique_student_in_teacher"
+            ),
         ]
 
 
