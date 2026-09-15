@@ -42,6 +42,15 @@ class GroupForm(forms.ModelForm):
 
 
 class LessonForm(forms.ModelForm):
+    duration = forms.IntegerField(
+        widget=forms.NumberInput(
+            attrs={
+                "class": "form-control",
+                "min": 1,
+            }
+        )
+    )
+
     class Meta:
         model = Lesson
         fields = ["start_datetime", "duration", "student", "status"]
@@ -49,11 +58,6 @@ class LessonForm(forms.ModelForm):
             "start_datetime": forms.DateTimeInput(
                 attrs={
                     "type": "datetime-local",
-                    "class": "form-control",
-                }
-            ),
-            "duration": forms.NumberInput(
-                attrs={
                     "class": "form-control",
                 }
             ),
@@ -72,7 +76,13 @@ class LessonForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields["duration"].initial = 60
+        self.initial["duration"] = 60
+
+        if self.instance and self.instance.pk and self.instance.duration:
+            if isinstance(self.instance.duration, timedelta):
+                self.initial["duration"] = int(
+                    self.instance.duration.total_seconds() // 60
+                )
 
         if user:
             self.fields["student"].queryset = Student.active_objects.filter(
@@ -80,7 +90,9 @@ class LessonForm(forms.ModelForm):
             )
 
     def clean_duration(self):
-        duration = self.cleaned_data.get("duration", timedelta(seconds=0))
-        if duration <= timedelta(seconds=0):
+        duration = self.cleaned_data.get("duration", 0)
+
+        if duration <= 0:
             raise forms.ValidationError("Lesson duration must be greater than 0.")
-        return duration
+
+        return timedelta(minutes=duration)
