@@ -5,7 +5,7 @@ from django import forms
 from schedule.models import Student
 
 
-class StudentCreateForm(forms.ModelForm):
+class StudentForm(forms.ModelForm):
     class Meta:
         model = Student
         fields = ["name", "lessons_price"]
@@ -22,5 +22,5 @@ class StudentCreateForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        super(StudentCreateForm, self).__init__(*args, **kwargs)
+        super(StudentForm, self).__init__(*args, **kwargs)
         self.fields["lessons_price"].initial = Decimal("600.00")

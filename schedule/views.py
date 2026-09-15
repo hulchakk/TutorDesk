@@ -1,8 +1,9 @@
 from django.http import HttpResponse, HttpRequest
 from django.shortcuts import redirect, render
-from django.views.generic import ListView
+from django.urls import reverse_lazy
+from django.views.generic import ListView, UpdateView
 
-from schedule.forms import StudentCreateForm
+from schedule.forms import StudentForm
 from schedule.models import Student
 
 
@@ -22,11 +23,11 @@ class StudentsView(ListView):
         context = super().get_context_data(**kwargs)
 
         if "form" not in context:
-            context["form"] = StudentCreateForm()
+            context["form"] = StudentForm()
         return context
 
     def post(self, request, *args, **kwargs):
-        form = StudentCreateForm(request.POST)
+        form = StudentForm(request.POST)
         if form.is_valid():
             student = form.save(commit=False)
             student.teacher = request.user
@@ -39,6 +40,18 @@ class StudentsView(ListView):
             self.template_name,
             self.get_context_data(form=form),
         )
+
+
+class StudentUpdateView(UpdateView):
+    model = Student
+    form_class = StudentForm
+    template_name = "schedule/forms/student_update.html"
+    context_object_name = "student"
+    success_url = reverse_lazy("schedule:students")
+
+    def get_queryset(self):
+        queryset = Student.active_objects
+        return queryset.filter(teacher=self.request.user)
 
 
 def delete_student_view(request: HttpRequest, pk: int) -> HttpResponse:
