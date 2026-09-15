@@ -1,3 +1,4 @@
+from django.http import HttpResponse, HttpRequest
 from django.shortcuts import redirect, render
 from django.views.generic import ListView
 
@@ -38,3 +39,11 @@ class StudentsView(ListView):
             self.template_name,
             self.get_context_data(form=form),
         )
+
+
+def delete_student_view(request: HttpRequest, pk: int) -> HttpResponse:
+    if request.method == "POST":
+        student = Student.objects.get(pk=pk)
+        student.is_active = False
+        student.save()
+    return redirect("schedule:students")
