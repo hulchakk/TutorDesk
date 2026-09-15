@@ -181,3 +181,18 @@ class LessonCreateView(CreateView):
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
         return kwargs
+
+
+class LessonUpdateView(UpdateView):
+    model = Lesson
+    form_class = LessonForm
+    template_name = "schedule/forms/lesson_update_form.html"
+    context_object_name = "lesson"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def get_success_url(self):
+        return reverse("schedule:lesson-update", kwargs={"pk": self.object.pk})
