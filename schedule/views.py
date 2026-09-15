@@ -101,6 +101,18 @@ class GroupsView(ListView):
         )
 
 
+class GroupUpdateView(UpdateView):
+    model = Group
+    form_class = GroupForm
+    template_name = "schedule/forms/group_update.html"
+    context_object_name = "group"
+    success_url = reverse_lazy("schedule:groups")
+
+    def get_queryset(self):
+        queryset = Group.active_objects
+        return queryset.filter(teacher=self.request.user)
+
+
 def delete_group_view(request: HttpRequest, pk: int) -> HttpResponse:
     if request.method == "POST":
         group = Group.objects.get(pk=pk)

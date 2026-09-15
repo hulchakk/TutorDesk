@@ -6,6 +6,7 @@ from schedule.views import (
     StudentUpdateView,
     GroupsView,
     delete_group_view,
+    GroupUpdateView,
 )
 
 urlpatterns = [
@@ -13,6 +14,7 @@ urlpatterns = [
     path("students/<int:pk>/", StudentUpdateView.as_view(), name="student-update"),
     path("students/<int:pk>/delete/", delete_student_view, name="student-delete"),
     path("groups/", GroupsView.as_view(), name="groups"),
+    path("groups/<int:pk>/", GroupUpdateView.as_view(), name="group-update"),
     path("groups/<int:pk>/delete/", delete_group_view, name="group-delete"),
 ]
 

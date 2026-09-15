@@ -1,0 +1,10 @@
+<h1>Update group {{ group.name }}</h1>
+
+<form method="post" action="{% url 'schedule:group-update' pk=group.pk%}">
+  {% csrf_token %}
+  <label>
+    Group name:
+    {{ form.name }}
+  </label>
+  <input type="submit" value="Save">
+</form>
