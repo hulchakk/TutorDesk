@@ -1,7 +1,7 @@
 from django.db.models import Count, Q, Prefetch
 from django.http import HttpResponse, HttpRequest
-from django.shortcuts import redirect, render, get_object_or_404
-from django.urls import reverse_lazy
+from django.shortcuts import redirect, get_object_or_404
+from django.urls import reverse_lazy, reverse
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, UpdateView, DetailView
 
@@ -45,13 +45,21 @@ class StudentUpdateView(UpdateView):
     form_class = StudentForm
     template_name = "schedule/forms/student_update.html"
     context_object_name = "student"
-    success_url = reverse_lazy("schedule:students")
 
     def get_queryset(self):
         queryset = Student.active_objects
-        return queryset.filter(
+
+        queryset = queryset.filter(
             Q(teacher=self.request.user) | Q(group__teacher=self.request.user)
         )
+
+        return queryset
+
+    def get_success_url(self):
+        if self.object.group_id:
+            return reverse("schedule:group-students", kwargs={"pk": self.object.group_id})
+
+        return reverse("schedule:students")
 
 
 @require_POST
