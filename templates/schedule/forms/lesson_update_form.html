@@ -20,3 +20,7 @@
   </label>
   <input type="submit" value="Save changes">
 </form>
+<form method="post" action="{% url 'schedule:lesson-delete' pk=lesson.id %}">
+  {% csrf_token %}
+  <input type="submit" value="Delete">
+</form>

@@ -3,7 +3,13 @@ from django.http import HttpResponse, HttpRequest
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.decorators.http import require_POST
-from django.views.generic import ListView, UpdateView, DetailView, CreateView
+from django.views.generic import (
+    ListView,
+    UpdateView,
+    DetailView,
+    CreateView,
+    DeleteView,
+)
 
 from schedule.forms import StudentForm, GroupForm, LessonForm
 from schedule.models import Student, Group, Lesson
@@ -196,3 +202,14 @@ class LessonUpdateView(UpdateView):
 
     def get_success_url(self):
         return reverse("schedule:lesson-update", kwargs={"pk": self.object.pk})
+
+
+@require_POST
+def delete_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
+    lesson = get_object_or_404(
+        Lesson,
+        pk=pk,
+        student__teacher=request.user,
+    )
+    lesson.delete()
+    return redirect("schedule:lesson-create")

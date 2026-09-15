@@ -10,6 +10,7 @@ from schedule.views import (
     GroupStudentsView,
     LessonCreateView,
     LessonUpdateView,
+    delete_lesson_view,
 )
 
 urlpatterns = [
@@ -24,6 +25,7 @@ urlpatterns = [
     ),
     path("lessons/create/", LessonCreateView.as_view(), name="lesson-create"),
     path("lessons/<int:pk>/", LessonUpdateView.as_view(), name="lesson-update"),
+    path("lessons/<int:pk>/delete/", delete_lesson_view, name="lesson-delete"),
 ]
 
 app_name = "schedule"
