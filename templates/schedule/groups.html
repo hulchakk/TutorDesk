@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}
+	My - groups
+{% endblock %}
+
+{% block content %}
+  <form method="post" action="{% url 'schedule:groups' %}">
+    {% csrf_token %}
+    <label>
+      Group name:
+      {{ form.name }}
+    </label>
+    <input type="submit" value="Create">
+  </form>
+  <table>
+    <tr>
+      <th>Id</th>
+      <th>Name</th>
+      <th>Students count</th>
+      <th>Delete group</th>
+    </tr>
+    {% for group in groups %}
+    <tr>
+      <td>{{ group.id }}</td>
+      <td>{{ group.name }}</td>
+      <td>{{ group.students.active_students_count }}</td>
+      <td><a href="">Delete</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+{% endblock %}

@@ -1,10 +1,11 @@
+from django.db.models import Count, Q
 from django.http import HttpResponse, HttpRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, UpdateView
 
-from schedule.forms import StudentForm
-from schedule.models import Student
+from schedule.forms import StudentForm, GroupForm
+from schedule.models import Student, Group
 
 
 class StudentsView(ListView):
@@ -60,3 +61,41 @@ def delete_student_view(request: HttpRequest, pk: int) -> HttpResponse:
         student.is_active = False
         student.save()
     return redirect("schedule:students")
+
+
+class GroupsView(ListView):
+    model = Group
+    template_name = "schedule/groups.html"
+    context_object_name = "groups"
+
+    def get_queryset(self):
+        queryset = Group.active_objects
+
+        queryset = queryset.filter(teacher=self.request.user)
+        queryset = queryset.annotate(
+            active_students_count=Count("students", filter=Q(students__is_active=True))
+        )
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if "form" not in context:
+            context["form"] = GroupForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = GroupForm(request.POST)
+        if form.is_valid():
+            group = form.save(commit=False)
+            group.teacher = request.user
+            group.save()
+            return redirect("schedule:groups")
+
+        self.object_list = self.get_queryset()
+        return render(
+            request,
+            self.template_name,
+            self.get_context_data(form=form),
+        )
