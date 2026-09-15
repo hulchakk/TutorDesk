@@ -66,10 +66,14 @@ class Student(models.Model):
                 name="exactly_one_of_group_or_teacher",
             ),
             models.UniqueConstraint(
-                fields=("group", "name"), name="unique_student_in_group"
+                fields=("group", "name"),
+                condition=models.Q(is_active=True),
+                name="unique_student_in_group",
             ),
             models.UniqueConstraint(
-                fields=("teacher", "name"), name="unique_student_in_teacher"
+                fields=("teacher", "name"),
+                condition=models.Q(is_active=True),
+                name="unique_student_in_teacher",
             ),
         ]
 
