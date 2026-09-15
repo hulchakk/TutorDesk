@@ -52,7 +52,9 @@ class StudentUpdateView(UpdateView):
 
     def get_queryset(self):
         queryset = Student.active_objects
-        return queryset.filter(teacher=self.request.user)
+        return queryset.filter(
+            Q(teacher=self.request.user) | Q(group__teacher=self.request.user)
+        )
 
 
 def delete_student_view(request: HttpRequest, pk: int) -> HttpResponse:
