@@ -3,10 +3,10 @@ from django.http import HttpResponse, HttpRequest
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.decorators.http import require_POST
-from django.views.generic import ListView, UpdateView, DetailView
+from django.views.generic import ListView, UpdateView, DetailView, CreateView
 
-from schedule.forms import StudentForm, GroupForm
-from schedule.models import Student, Group
+from schedule.forms import StudentForm, GroupForm, LessonForm
+from schedule.models import Student, Group, Lesson
 
 
 class StudentsView(ListView):
@@ -57,7 +57,9 @@ class StudentUpdateView(UpdateView):
 
     def get_success_url(self):
         if self.object.group_id:
-            return reverse("schedule:group-students", kwargs={"pk": self.object.group_id})
+            return reverse(
+                "schedule:group-students", kwargs={"pk": self.object.group_id}
+            )
 
         return reverse("schedule:students")
 
@@ -167,3 +169,15 @@ class GroupStudentsView(DetailView):
             return redirect("schedule:group-students", pk=self.object.pk)
 
         return self.render_to_response(self.get_context_data(form=form))
+
+
+class LessonCreateView(CreateView):
+    model = Lesson
+    form_class = LessonForm
+    template_name = "schedule/forms/lesson_create_form.html"
+    success_url = reverse_lazy("schedule:lesson-create")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
