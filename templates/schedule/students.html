@@ -28,10 +28,10 @@
     {% for student in students %}
     <tr>
       <td>{{ student.id }}</td>
-      <td>{{ student.name }}</td>
+      <td><a href="{% url 'schedule:student-update' pk=student.id %}">{{ student.name }}</a></td>
       <td>{{ student.lessons_count }}</td>
       <td>{{ student.lessons_price }}</td>
-      <td><a href="{% url "schedule:student-delete" pk=student.pk %}">Delete</a></td>
+      <td><a href="{% url 'schedule:student-delete' pk=student.pk %}">Delete</a></td>
     </tr>
     {% endfor %}
   </table>

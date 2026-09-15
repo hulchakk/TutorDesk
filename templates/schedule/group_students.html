@@ -31,7 +31,7 @@
       <td><a href="{% url 'schedule:student-update' pk=student.id %}">{{ student.name }}</a></td>
       <td>{{ student.lessons_count }}</td>
       <td>{{ student.lessons_price }}</td>
-      <td><a href="{% url "schedule:group-students" pk=group.pk %}">Delete</a></td>
+      <td><a href="{% url 'schedule:student-delete' pk=student.id %}">Delete</a></td>
     </tr>
     {% endfor %}
   </table>
