@@ -99,3 +99,11 @@ class GroupsView(ListView):
             self.template_name,
             self.get_context_data(form=form),
         )
+
+
+def delete_group_view(request: HttpRequest, pk: int) -> HttpResponse:
+    if request.method == "POST":
+        group = Group.objects.get(pk=pk)
+        group.is_active = False
+        group.save()
+    return redirect("schedule:groups")
