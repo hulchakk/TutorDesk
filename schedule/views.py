@@ -1,7 +1,8 @@
 from django.db.models import Count, Q, Prefetch
 from django.http import HttpResponse, HttpRequest
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse_lazy
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView, UpdateView, DetailView
 
 from schedule.forms import StudentForm, GroupForm
@@ -53,11 +54,16 @@ class StudentUpdateView(UpdateView):
         )
 
 
+@require_POST
 def delete_student_view(request: HttpRequest, pk: int) -> HttpResponse:
-    if request.method == "POST":
-        student = Student.objects.get(pk=pk)
-        student.is_active = False
-        student.save()
+    student = get_object_or_404(
+        Student.active_objects,
+        Q(teacher=request.user) | Q(group__teacher=request.user),
+        pk=pk,
+    )
+    student.is_active = False
+    student.save()
+
     return redirect("schedule:students")
 
 
@@ -107,11 +113,12 @@ class GroupUpdateView(UpdateView):
         return queryset.filter(teacher=self.request.user)
 
 
+@require_POST
 def delete_group_view(request: HttpRequest, pk: int) -> HttpResponse:
-    if request.method == "POST":
-        group = Group.objects.get(pk=pk)
-        group.is_active = False
-        group.save()
+    group = get_object_or_404(Group.active_objects, pk=pk, teacher=request.user)
+    group.is_active = False
+    group.save()
+
     return redirect("schedule:groups")
 
 
