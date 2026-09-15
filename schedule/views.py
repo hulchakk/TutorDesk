@@ -64,6 +64,9 @@ def delete_student_view(request: HttpRequest, pk: int) -> HttpResponse:
     student.is_active = False
     student.save()
 
+    if student.group:
+        return redirect("schedule:group-students", pk=student.group.pk)
+
     return redirect("schedule:students")
 
 
