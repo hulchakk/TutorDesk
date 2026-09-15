@@ -1,8 +1,8 @@
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Prefetch
 from django.http import HttpResponse, HttpRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import ListView, UpdateView
+from django.views.generic import ListView, UpdateView, DetailView
 
 from schedule.forms import StudentForm, GroupForm
 from schedule.models import Student, Group
@@ -119,3 +119,39 @@ def delete_group_view(request: HttpRequest, pk: int) -> HttpResponse:
         group.is_active = False
         group.save()
     return redirect("schedule:groups")
+
+
+class GroupStudentsView(DetailView):
+    model = Group
+    template_name = "schedule/group_students.html"
+    context_object_name = "group"
+
+    def get_queryset(self):
+        queryset = Group.active_objects
+
+        queryset = queryset.filter(teacher=self.request.user)
+
+        queryset = queryset.prefetch_related(
+            Prefetch("students", queryset=Student.active_objects.all())
+        )
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if "form" not in context:
+            context["form"] = StudentForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = StudentForm(request.POST)
+
+        if form.is_valid():
+            student = form.save(commit=False)
+            student.group = self.object
+            student.save()
+            return redirect("schedule:group-students", pk=self.object.pk)
+
+        return self.render_to_response(self.get_context_data(form=form))

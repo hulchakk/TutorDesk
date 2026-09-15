@@ -23,8 +23,8 @@
     {% for group in groups %}
     <tr>
       <td>{{ group.id }}</td>
-      <td>{{ group.name }}</td>
-      <td>{{ group.students.active_students_count }}</td>
+      <td><a href="{% url 'schedule:group-students' pk=group.id %}">{{ group.name }}</a></td>
+      <td>{{ group.active_students_count }}</td>
       <td><a href="{% url 'schedule:group-delete' pk=group.pk %}">Delete</a></td>
     </tr>
     {% endfor %}

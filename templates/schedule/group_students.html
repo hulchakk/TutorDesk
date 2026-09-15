@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}
+	{{ group.name }} - students
+{% endblock %}
+
+{% block content %}
+  <form method="post" action="{% url 'schedule:group-students' pk=group.id %}">
+    {% csrf_token %}
+    <label>
+      Student name:
+      {{ form.name }}
+    </label>
+    <label>
+      Price per lesson:
+      {{ form.lessons_price }}
+    </label>
+    <input type="submit" value="Create">
+  </form>
+  <table>
+    <tr>
+      <th>Id</th>
+      <th>Name</th>
+      <th>Lessons left</th>
+      <th>Lessons price</th>
+      <th>Delete student</th>
+    </tr>
+    {% for student in group.students.all %}
+    <tr>
+      <td>{{ student.id }}</td>
+      <td>{{ student.name }}</td>
+      <td>{{ student.lessons_count }}</td>
+      <td>{{ student.lessons_price }}</td>
+      <td><a href="{% url "schedule:group-students" pk=group.pk %}">Delete</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+{% endblock %}

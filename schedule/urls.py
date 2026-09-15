@@ -7,6 +7,7 @@ from schedule.views import (
     GroupsView,
     delete_group_view,
     GroupUpdateView,
+    GroupStudentsView,
 )
 
 urlpatterns = [
@@ -16,6 +17,9 @@ urlpatterns = [
     path("groups/", GroupsView.as_view(), name="groups"),
     path("groups/<int:pk>/", GroupUpdateView.as_view(), name="group-update"),
     path("groups/<int:pk>/delete/", delete_group_view, name="group-delete"),
+    path(
+        "groups/<int:pk>/students/", GroupStudentsView.as_view(), name="group-students"
+    ),
 ]
 
 app_name = "schedule"
