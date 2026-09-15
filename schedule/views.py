@@ -36,11 +36,7 @@ class StudentsView(ListView):
             return redirect("schedule:students")
 
         self.object_list = self.get_queryset()
-        return render(
-            request,
-            self.template_name,
-            self.get_context_data(form=form),
-        )
+        return self.render_to_response(self.get_context_data(form=form))
 
 
 class StudentUpdateView(UpdateView):
@@ -96,11 +92,7 @@ class GroupsView(ListView):
             return redirect("schedule:groups")
 
         self.object_list = self.get_queryset()
-        return render(
-            request,
-            self.template_name,
-            self.get_context_data(form=form),
-        )
+        return self.render_to_response(self.get_context_data(form=form))
 
 
 class GroupUpdateView(UpdateView):
