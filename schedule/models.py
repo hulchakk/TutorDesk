@@ -77,6 +77,9 @@ class Student(models.Model):
             ),
         ]
 
+    def __str__(self):
+        return self.name
+
 
 class Group(models.Model):
     name = models.CharField(null=False, max_length=255)
