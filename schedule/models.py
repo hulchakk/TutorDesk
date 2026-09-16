@@ -93,6 +93,9 @@ class Group(models.Model):
     objects = models.Manager()
     active_objects = ActiveModelsManager()
 
+    def __str__(self):
+        return self.name
+
 
 class LessonStatusEnum(models.TextChoices):
     PLANNED = "planned", "Planned"
@@ -206,7 +209,7 @@ class Lesson(LessonAbstract):
 
 class GroupLesson(LessonAbstract):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="lessons")
-    attendance_list = models.JSONField(null=False, default=list)
+    attendance_list = models.JSONField(null=False, blank=True, default=list)
 
     def clean(self):
         super().clean()
