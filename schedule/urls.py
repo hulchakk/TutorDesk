@@ -11,6 +11,7 @@ from schedule.views import (
     LessonCreateView,
     LessonUpdateView,
     delete_lesson_view,
+    GroupLessonCreateView,
 )
 
 urlpatterns = [
@@ -26,6 +27,11 @@ urlpatterns = [
     path("lessons/create/", LessonCreateView.as_view(), name="lesson-create"),
     path("lessons/<int:pk>/", LessonUpdateView.as_view(), name="lesson-update"),
     path("lessons/<int:pk>/delete/", delete_lesson_view, name="lesson-delete"),
+    path(
+        "group_lessons/create/",
+        GroupLessonCreateView.as_view(),
+        name="group-lesson-create",
+    ),
 ]
 
 app_name = "schedule"

@@ -11,7 +11,7 @@ from django.views.generic import (
     DeleteView,
 )
 
-from schedule.forms import StudentForm, GroupForm, LessonForm
+from schedule.forms import StudentForm, GroupForm, LessonForm, GroupLessonForm
 from schedule.models import Student, Group, Lesson
 
 
@@ -213,3 +213,15 @@ def delete_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
     )
     lesson.delete()
     return redirect("schedule:lesson-create")
+
+
+class GroupLessonCreateView(CreateView):
+    model = Lesson
+    form_class = GroupLessonForm
+    template_name = "schedule/forms/group_lesson_create_form.html"
+    success_url = reverse_lazy("schedule:group-lesson-create")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs

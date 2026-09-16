@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django import forms
 
-from schedule.models import Student, Group, Lesson
+from schedule.models import Student, Group, Lesson, GroupLesson
 
 
 class StudentForm(forms.ModelForm):
@@ -84,7 +84,7 @@ class LessonForm(forms.ModelForm):
                     self.instance.duration.total_seconds() // 60
                 )
 
-        if user:
+        if user and "student" in self.fields:
             self.fields["student"].queryset = Student.active_objects.filter(
                 teacher=user
             )
@@ -96,3 +96,33 @@ class LessonForm(forms.ModelForm):
             raise forms.ValidationError("Lesson duration must be greater than 0.")
 
         return timedelta(minutes=duration)
+
+
+class GroupLessonForm(LessonForm):
+    class Meta:
+        model = GroupLesson
+        fields = ["start_datetime", "duration", "group", "status"]
+        widgets = {
+            "start_datetime": forms.DateTimeInput(
+                attrs={
+                    "type": "datetime-local",
+                    "class": "form-control",
+                }
+            ),
+            "group": forms.Select(
+                attrs={
+                    "class": "form-control",
+                }
+            ),
+            "status": forms.Select(
+                attrs={
+                    "class": "form-control",
+                }
+            ),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if user:
+            self.fields["group"].queryset = Group.active_objects.filter(teacher=user)
