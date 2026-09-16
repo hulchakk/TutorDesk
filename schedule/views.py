@@ -8,7 +8,6 @@ from django.views.generic import (
     UpdateView,
     DetailView,
     CreateView,
-    DeleteView,
 )
 
 from schedule.forms import StudentForm, GroupForm, LessonForm, GroupLessonForm
@@ -240,3 +239,14 @@ class GroupLessonUpdateView(UpdateView):
 
     def get_success_url(self):
         return reverse("schedule:group-lesson-update", kwargs={"pk": self.object.pk})
+
+
+@require_POST
+def delete_group_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
+    lesson = get_object_or_404(
+        GroupLesson,
+        pk=pk,
+        group__teacher=request.user,
+    )
+    lesson.delete()
+    return redirect("schedule:group-lesson-create")
