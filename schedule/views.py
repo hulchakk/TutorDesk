@@ -12,7 +12,7 @@ from django.views.generic import (
 )
 
 from schedule.forms import StudentForm, GroupForm, LessonForm, GroupLessonForm
-from schedule.models import Student, Group, Lesson
+from schedule.models import Student, Group, Lesson, GroupLesson
 
 
 class StudentsView(ListView):
@@ -225,3 +225,18 @@ class GroupLessonCreateView(CreateView):
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
         return kwargs
+
+
+class GroupLessonUpdateView(UpdateView):
+    model = GroupLesson
+    form_class = GroupLessonForm
+    template_name = "schedule/forms/group_lesson_update_form.html"
+    context_object_name = "lesson"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def get_success_url(self):
+        return reverse("schedule:group-lesson-update", kwargs={"pk": self.object.pk})

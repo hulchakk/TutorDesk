@@ -1,0 +1,26 @@
+<h1>Edit group lesson</h1>
+
+<form method="post" action="{% url 'schedule:group-lesson-update' pk=lesson.id %}">
+  {% csrf_token %}
+  <label>
+    Start date and time:
+    {{ form.start_datetime }}
+  </label>
+  <label>
+    Duration (minutes):
+    {{ form.duration }}
+  </label>
+  <label>
+    Group:
+    {{ form.group }}
+  </label>
+  <label>
+    Status:
+    {{ form.status }}
+  </label>
+  <input type="submit" value="Save changes">
+</form>
+<form method="post" action="">
+  {% csrf_token %}
+  <input type="submit" value="Delete">
+</form>
