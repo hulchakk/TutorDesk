@@ -17,6 +17,7 @@ from django.views.generic import (
 
 from schedule.forms import StudentForm, GroupForm, LessonForm, GroupLessonForm
 from schedule.models import Student, Group, Lesson, GroupLesson
+from schedule.utils import get_week_str
 
 
 class StudentsView(ListView):
@@ -185,7 +186,7 @@ class LessonCreateView(CreateView):
     model = Lesson
     form_class = LessonForm
     template_name = "schedule/forms/lesson_create_form.html"
-    success_url = reverse_lazy("schedule:lesson-create")
+    success_url = reverse_lazy("schedule:teacher-schedule")
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -205,7 +206,7 @@ class LessonUpdateView(UpdateView):
         return kwargs
 
     def get_success_url(self):
-        return reverse("schedule:lesson-update", kwargs={"pk": self.object.pk})
+        return f"{reverse('schedule:teacher-schedule')}?week={get_week_str(self.object.start_datetime)}"
 
 
 @require_POST
@@ -216,14 +217,14 @@ def delete_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
         student__teacher=request.user,
     )
     lesson.delete()
-    return redirect("schedule:lesson-create")
+    return redirect("schedule:teacher-schedule")
 
 
 class GroupLessonCreateView(CreateView):
     model = Lesson
     form_class = GroupLessonForm
     template_name = "schedule/forms/group_lesson_create_form.html"
-    success_url = reverse_lazy("schedule:group-lesson-create")
+    success_url = reverse_lazy("schedule:teacher-schedule")
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -243,7 +244,7 @@ class GroupLessonUpdateView(UpdateView):
         return kwargs
 
     def get_success_url(self):
-        return reverse("schedule:group-lesson-update", kwargs={"pk": self.object.pk})
+        return f"{reverse('schedule:teacher-schedule')}?week={get_week_str(self.object.start_datetime)}"
 
 
 @require_POST
@@ -254,7 +255,7 @@ def delete_group_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
         group__teacher=request.user,
     )
     lesson.delete()
-    return redirect("schedule:group-lesson-create")
+    return redirect("schedule:teacher-schedule")
 
 
 class TeacherScheduleView(UserPassesTestMixin, TemplateView):
