@@ -16,6 +16,7 @@ from django.views.generic import (
 )
 
 from schedule.forms import StudentForm, GroupForm, LessonForm, GroupLessonForm
+from schedule.mixins import HTMXFormMixin
 from schedule.models import Student, Group, Lesson, GroupLesson
 from schedule.utils import get_week_str
 
@@ -51,7 +52,7 @@ class StudentsView(ListView):
         return self.render_to_response(self.get_context_data(form=form))
 
 
-class StudentUpdateView(UpdateView):
+class StudentUpdateView(HTMXFormMixin, UpdateView):
     model = Student
     form_class = StudentForm
     template_name = "schedule/forms/student_update.html"
@@ -125,7 +126,7 @@ class GroupsView(ListView):
         return self.render_to_response(self.get_context_data(form=form))
 
 
-class GroupUpdateView(UpdateView):
+class GroupUpdateView(HTMXFormMixin, UpdateView):
     model = Group
     form_class = GroupForm
     template_name = "schedule/forms/group_update.html"
@@ -182,7 +183,7 @@ class GroupStudentsView(DetailView):
         return self.render_to_response(self.get_context_data(form=form))
 
 
-class LessonCreateView(CreateView):
+class LessonCreateView(HTMXFormMixin, CreateView):
     model = Lesson
     form_class = LessonForm
     template_name = "schedule/forms/lesson_create_form.html"
@@ -194,7 +195,7 @@ class LessonCreateView(CreateView):
         return kwargs
 
 
-class LessonUpdateView(UpdateView):
+class LessonUpdateView(HTMXFormMixin, UpdateView):
     model = Lesson
     form_class = LessonForm
     template_name = "schedule/forms/lesson_update_form.html"
@@ -220,7 +221,7 @@ def delete_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
     return redirect("schedule:teacher-schedule")
 
 
-class GroupLessonCreateView(CreateView):
+class GroupLessonCreateView(HTMXFormMixin, CreateView):
     model = Lesson
     form_class = GroupLessonForm
     template_name = "schedule/forms/group_lesson_create_form.html"
@@ -232,7 +233,7 @@ class GroupLessonCreateView(CreateView):
         return kwargs
 
 
-class GroupLessonUpdateView(UpdateView):
+class GroupLessonUpdateView(HTMXFormMixin, UpdateView):
     model = GroupLesson
     form_class = GroupLessonForm
     template_name = "schedule/forms/group_lesson_update_form.html"
