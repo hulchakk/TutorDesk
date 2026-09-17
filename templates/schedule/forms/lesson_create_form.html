@@ -1,22 +1,46 @@
+<form hx-post="{% url 'schedule:lesson-create' %}"
+      hx-target="this"
+      hx-swap="outerHTML">
+
 <h1>Create lesson</h1>
 
-<form method="post" action="{% url 'schedule:lesson-create' %}">
-  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="form-error">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+
   <label>
     Start date and time:
     {{ form.start_datetime }}
+    {% if form.start_datetime.errors %}
+      <span class="field-error">{{ form.start_datetime.errors }}</span>
+    {% endif %}
   </label>
+
   <label>
     Duration (minutes):
     {{ form.duration }}
+    {% if form.duration.errors %}
+      <span class="field-error">{{ form.duration.errors }}</span>
+    {% endif %}
   </label>
+
   <label>
     Student:
     {{ form.student }}
+    {% if form.student.errors %}
+      <span class="field-error">{{ form.student.errors }}</span>
+    {% endif %}
   </label>
+
   <label>
     Status:
     {{ form.status }}
+    {% if form.status.errors %}
+      <span class="field-error">{{ form.status.errors }}</span>
+    {% endif %}
   </label>
-  <input type="submit" value="Create lesson">
+
+  <button type="submit">Create lesson</button>
 </form>

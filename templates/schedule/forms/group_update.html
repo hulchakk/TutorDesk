@@ -1,10 +1,22 @@
+<form hx-post="{% url 'schedule:group-update' pk=group.pk %}"
+      hx-target="this"
+      hx-swap="outerHTML">
+
 <h1>Update group {{ group.name }}</h1>
 
-<form method="post" action="{% url 'schedule:group-update' pk=group.pk%}">
-  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="form-error">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+
   <label>
     Group name:
     {{ form.name }}
+    {% if form.name.errors %}
+      <span class="field-error">{{ form.name.errors }}</span>
+    {% endif %}
   </label>
-  <input type="submit" value="Save">
+
+  <button type="submit">Save</button>
 </form>

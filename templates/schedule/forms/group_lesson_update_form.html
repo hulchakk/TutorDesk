@@ -1,26 +1,51 @@
+<form hx-post="{% url 'schedule:group-lesson-update' pk=lesson.id %}"
+      hx-target="this"
+      hx-swap="outerHTML">
+
 <h1>Edit group lesson</h1>
 
-<form method="post" action="{% url 'schedule:group-lesson-update' pk=lesson.id %}">
-  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="form-error">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+
   <label>
     Start date and time:
     {{ form.start_datetime }}
+    {% if form.start_datetime.errors %}
+      <span class="field-error">{{ form.start_datetime.errors }}</span>
+    {% endif %}
   </label>
+
   <label>
     Duration (minutes):
     {{ form.duration }}
+    {% if form.duration.errors %}
+      <span class="field-error">{{ form.duration.errors }}</span>
+    {% endif %}
   </label>
+
   <label>
     Group:
     {{ form.group }}
+    {% if form.group.errors %}
+      <span class="field-error">{{ form.group.errors }}</span>
+    {% endif %}
   </label>
+
   <label>
     Status:
     {{ form.status }}
+    {% if form.status.errors %}
+      <span class="field-error">{{ form.status.errors }}</span>
+    {% endif %}
   </label>
-  <input type="submit" value="Save changes">
+
+  <button type="submit">Save changes</button>
 </form>
-<form method="post" action="{% url 'schedule:group-lesson-delete' pk=lesson.id %}">
-  {% csrf_token %}
-  <input type="submit" value="Delete">
+
+<form hx-post="{% url 'schedule:group-lesson-delete' pk=lesson.id %}"
+      hx-confirm="Are you sure you want to delete this lesson?">
+  <button type="submit">Delete</button>
 </form>

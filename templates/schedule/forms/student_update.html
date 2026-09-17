@@ -1,14 +1,30 @@
+<form hx-post="{% url 'schedule:student-update' pk=student.pk %}"
+      hx-target="this"
+      hx-swap="outerHTML">
+
 <h1>Update student {{ student.name }}</h1>
 
-<form method="post" action="{% url 'schedule:student-update' pk=student.pk%}">
-  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="form-error">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+
   <label>
     Student name:
     {{ form.name }}
+    {% if form.name.errors %}
+      <span class="field-error">{{ form.name.errors }}</span>
+    {% endif %}
   </label>
+
   <label>
     Price per lesson:
     {{ form.lessons_price }}
+    {% if form.lessons_price.errors %}
+      <span class="field-error">{{ form.lessons_price.errors }}</span>
+    {% endif %}
   </label>
-  <input type="submit" value="Save">
+
+  <button type="submit">Save</button>
 </form>
