@@ -49,7 +49,7 @@ class StudentCreateView(HTMXFormMixin, CreateView):
 class StudentUpdateView(HTMXFormMixin, UpdateView):
     model = Student
     form_class = StudentForm
-    template_name = "schedule/forms/student_update.html"
+    template_name = "schedule/forms/student_update_form.html"
     context_object_name = "student"
 
     def get_queryset(self):
@@ -117,7 +117,7 @@ class GroupCreateView(HTMXFormMixin, CreateView):
 class GroupUpdateView(HTMXFormMixin, UpdateView):
     model = Group
     form_class = GroupForm
-    template_name = "schedule/forms/group_update.html"
+    template_name = "schedule/forms/group_update_form.html"
     context_object_name = "group"
     success_url = reverse_lazy("schedule:groups")
 
