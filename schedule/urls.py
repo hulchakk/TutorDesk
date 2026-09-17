@@ -14,6 +14,7 @@ from schedule.views import (
     GroupLessonCreateView,
     GroupLessonUpdateView,
     delete_group_lesson_view,
+    TeacherScheduleView,
 )
 
 urlpatterns = [
@@ -43,6 +44,11 @@ urlpatterns = [
         "group_lessons/<int:pk>/delete/",
         delete_group_lesson_view,
         name="group-lesson-delete",
+    ),
+    path(
+        "schedule/",
+        TeacherScheduleView.as_view(),
+        name="teacher-schedule",
     ),
 ]
 

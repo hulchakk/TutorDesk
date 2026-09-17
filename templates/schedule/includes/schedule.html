@@ -1,0 +1,55 @@
+<div>
+  <div>
+    <a href="{% url 'schedule:teacher-schedule' %}?week={{ prev_week_str }}">Prev week</a>
+    <a href="{% url 'schedule:teacher-schedule' %}">Current week</a>
+    <a href="{% url 'schedule:teacher-schedule' %}?week={{ next_week_str }}">Next week</a>
+    <hr>
+    <span>{{ start_of_week }} - {{ end_of_week }}</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        {% for day in schedule %}
+        <th>
+          {{ day.name }}
+          <br>
+          {{ day.date }}
+        </th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        {% for day in schedule %}
+        <td>
+          {% for item in day.timeline %}
+            {% if item.type == 'GAP' %}
+              <div>
+                {{ item.start_datetime }} - {{ item.end_datetime }}
+              </div>
+              <hr>
+            {% else %}
+              {% if item.type == 'INDIVIDUAL' %}
+              <a href="{% url 'schedule:lesson-update' pk=item.id %}">
+              {% elif item.type == 'GROUP' %}
+              <a href="{% url 'schedule:group-lesson-update' pk=item.id %}">
+              {% endif %}
+                <div>
+                  {{ item.name }}
+                  <br>
+                  {{ item.start_datetime }}
+                  <br>
+                  {{ item.duration }}
+                  <br>
+                  {{ item.status }}
+                </div>
+              </a>
+              <hr>
+            {% endif %}
+          {% endfor %}
+        </td>
+        {% endfor %}
+      </tr>
+    </tbody>
+  </table>
+</div>
