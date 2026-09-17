@@ -1,6 +1,6 @@
 <h1>Create student</h1>
 
-<form method="post" action="{% url 'schedule:group-student-create' pk=group.id %}">
+<form method="post" action="{% url 'schedule:group-student-create' pk=group.pk %}">
   {% csrf_token %}
   <label>
     Student name:

@@ -155,6 +155,13 @@ class GroupStudentCreateView(HTMXFormMixin, CreateView):
     form_class = StudentForm
     template_name = "schedule/forms/group_student_create_form.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["group"] = get_object_or_404(
+            Group.active_objects, pk=self.kwargs["pk"], teacher=self.request.user
+        )
+        return context
+
     def form_valid(self, form):
         group = get_object_or_404(
             Group.active_objects, pk=self.kwargs["pk"], teacher=self.request.user
