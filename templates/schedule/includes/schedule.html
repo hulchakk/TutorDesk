@@ -30,9 +30,17 @@
               <hr>
             {% else %}
               {% if item.type == 'INDIVIDUAL' %}
-              <a href="{% url 'schedule:lesson-update' pk=item.id %}">
+              <a href="#"
+                 hx-get="{% url 'schedule:lesson-update' pk=item.id %}"
+                 hx-target="#form-container"
+                 hx-swap="innerHTML"
+              >
               {% elif item.type == 'GROUP' %}
-              <a href="{% url 'schedule:group-lesson-update' pk=item.id %}">
+              <a href="#"
+                 hx-get="{% url 'schedule:group-lesson-update' pk=item.id %}"
+                 hx-target="#form-container"
+                 hx-swap="innerHTML"
+              >
               {% endif %}
                 <div>
                   {{ item.name }}

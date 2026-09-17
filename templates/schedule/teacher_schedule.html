@@ -5,5 +5,23 @@
 {% endblock %}
 
 {% block content %}
+  <button hx-get="{% url 'schedule:lesson-create' %}"
+        hx-target="#form-container"
+        hx-swap="innerHTML">
+    + Add new lesson
+  </button>
+
+  <button hx-get="{% url 'schedule:group-lesson-create' %}"
+        hx-target="#form-container"
+        hx-swap="innerHTML">
+    + Add new group lesson
+  </button>
+
+  <div id="form-container"
+       hx-get="{% url 'schedule:lesson-create' %}"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+  </div>
+
   {% include 'schedule/includes/schedule.html' %}
 {% endblock %}
