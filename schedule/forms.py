@@ -2,6 +2,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django import forms
+from django.db.models import Q
 
 from schedule.models import Student, Group, Lesson, GroupLesson
 
@@ -85,9 +86,15 @@ class LessonForm(forms.ModelForm):
                 )
 
         if user and "student" in self.fields:
-            self.fields["student"].queryset = Student.active_objects.filter(
-                teacher=user
-            )
+            queryset = Student.active_objects.filter(teacher=user)
+
+            if self.instance and self.instance.pk and self.instance.student_id:
+                queryset = Student.objects.filter(
+                    Q(teacher=user)
+                    & (Q(is_active=True) | Q(pk=self.instance.student_id))
+                )
+
+            self.fields["student"].queryset = queryset
 
     def clean_duration(self):
         duration = self.cleaned_data.get("duration", 0)
@@ -122,7 +129,14 @@ class GroupLessonForm(LessonForm):
         }
 
     def __init__(self, *args, user=None, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, user=user, **kwargs)
 
-        if user:
-            self.fields["group"].queryset = Group.active_objects.filter(teacher=user)
+        if user and "group" in self.fields:
+            queryset = Group.active_objects.filter(teacher=user)
+
+            if self.instance and self.instance.pk and self.instance.group_id:
+                queryset = Group.objects.filter(
+                    Q(teacher=user) & (Q(is_active=True) | Q(pk=self.instance.group_id))
+                )
+
+            self.fields["group"].queryset = queryset
