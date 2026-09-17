@@ -93,6 +93,15 @@ class Group(models.Model):
     objects = models.Manager()
     active_objects = ActiveModelsManager()
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("teacher", "name"),
+                condition=models.Q(is_active=True),
+                name="unique_group_in_teacher",
+            )
+        ]
+
     def __str__(self):
         return self.name
 
@@ -206,6 +215,9 @@ class Lesson(LessonAbstract):
         self.full_clean()
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return f"Lesson(student={str(self.student)}, status={str(self.status)}, start_datetime={str(self.start_datetime)})"
+
 
 class GroupLesson(LessonAbstract):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="lessons")
@@ -314,3 +326,6 @@ class GroupLesson(LessonAbstract):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"GroupLesson(group={str(self.group)}, status={str(self.status)}, start_datetime={str(self.start_datetime)})"
