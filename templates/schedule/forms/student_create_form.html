@@ -1,0 +1,14 @@
+<h1>Create student</h1>
+
+<form method="post" action="{% url 'schedule:student-create' %}">
+  {% csrf_token %}
+  <label>
+    Student name:
+    {{ form.name }}
+  </label>
+  <label>
+    Price per lesson:
+    {{ form.lessons_price }}
+  </label>
+  <input type="submit" value="Create">
+</form>

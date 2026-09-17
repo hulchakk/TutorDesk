@@ -33,23 +33,16 @@ class StudentsView(ListView):
 
         return queryset
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
 
-        if "form" not in context:
-            context["form"] = StudentForm()
-        return context
+class StudentCreateView(HTMXFormMixin, CreateView):
+    model = Student
+    form_class = StudentForm
+    template_name = "schedule/forms/student_create_form.html"
+    success_url = reverse_lazy("schedule:students")
 
-    def post(self, request, *args, **kwargs):
-        form = StudentForm(request.POST)
-        if form.is_valid():
-            student = form.save(commit=False)
-            student.teacher = request.user
-            student.save()
-            return redirect("schedule:students")
-
-        self.object_list = self.get_queryset()
-        return self.render_to_response(self.get_context_data(form=form))
+    def form_valid(self, form):
+        form.instance.teacher = self.request.user
+        return super().form_valid(form)
 
 
 class StudentUpdateView(HTMXFormMixin, UpdateView):
@@ -107,23 +100,16 @@ class GroupsView(ListView):
 
         return queryset
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
 
-        if "form" not in context:
-            context["form"] = GroupForm()
-        return context
+class GroupCreateView(HTMXFormMixin, CreateView):
+    model = Group
+    form_class = GroupForm
+    template_name = "schedule/forms/group_create_form.html"
+    success_url = reverse_lazy("schedule:groups")
 
-    def post(self, request, *args, **kwargs):
-        form = GroupForm(request.POST)
-        if form.is_valid():
-            group = form.save(commit=False)
-            group.teacher = request.user
-            group.save()
-            return redirect("schedule:groups")
-
-        self.object_list = self.get_queryset()
-        return self.render_to_response(self.get_context_data(form=form))
+    def form_valid(self, form):
+        form.instance.teacher = self.request.user
+        return super().form_valid(form)
 
 
 class GroupUpdateView(HTMXFormMixin, UpdateView):
@@ -163,24 +149,21 @@ class GroupStudentsView(DetailView):
 
         return queryset
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
 
-        if "form" not in context:
-            context["form"] = StudentForm()
-        return context
+class GroupStudentCreateView(HTMXFormMixin, CreateView):
+    model = Student
+    form_class = StudentForm
+    template_name = "schedule/forms/group_student_create_form.html"
 
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        form = StudentForm(request.POST)
+    def form_valid(self, form):
+        group = get_object_or_404(
+            Group.active_objects, pk=self.kwargs["pk"], teacher=self.request.user
+        )
+        form.instance.group = group
+        return super().form_valid(form)
 
-        if form.is_valid():
-            student = form.save(commit=False)
-            student.group = self.object
-            student.save()
-            return redirect("schedule:group-students", pk=self.object.pk)
-
-        return self.render_to_response(self.get_context_data(form=form))
+    def get_success_url(self):
+        return reverse("schedule:group-students", kwargs={"pk": self.kwargs["pk"]})
 
 
 class LessonCreateView(HTMXFormMixin, CreateView):

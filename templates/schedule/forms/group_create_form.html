@@ -1,0 +1,10 @@
+<h1>Create group</h1>
+
+<form method="post" action="{% url 'schedule:group-create' %}">
+  {% csrf_token %}
+  <label>
+    Group name:
+    {{ form.name }}
+  </label>
+  <input type="submit" value="Create">
+</form>
