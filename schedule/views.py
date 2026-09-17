@@ -15,6 +15,7 @@ from django.views.generic import (
     TemplateView,
 )
 
+from schedule.decorators import htmx_redirect_response
 from schedule.forms import StudentForm, GroupForm, LessonForm, GroupLessonForm
 from schedule.mixins import HTMXFormMixin
 from schedule.models import Student, Group, Lesson, GroupLesson
@@ -70,6 +71,7 @@ class StudentUpdateView(HTMXFormMixin, UpdateView):
 
 
 @require_POST
+@htmx_redirect_response
 def delete_student_view(request: HttpRequest, pk: int) -> HttpResponse:
     student = get_object_or_404(
         Student.active_objects,
@@ -125,6 +127,7 @@ class GroupUpdateView(HTMXFormMixin, UpdateView):
 
 
 @require_POST
+@htmx_redirect_response
 def delete_group_view(request: HttpRequest, pk: int) -> HttpResponse:
     group = get_object_or_404(Group.active_objects, pk=pk, teacher=request.user)
     group.is_active = False
@@ -201,6 +204,7 @@ class LessonUpdateView(HTMXFormMixin, UpdateView):
 
 
 @require_POST
+@htmx_redirect_response
 def delete_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
     lesson = get_object_or_404(
         Lesson,
@@ -239,6 +243,7 @@ class GroupLessonUpdateView(HTMXFormMixin, UpdateView):
 
 
 @require_POST
+@htmx_redirect_response
 def delete_group_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
     lesson = get_object_or_404(
         GroupLesson,
