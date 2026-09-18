@@ -2,10 +2,12 @@ from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_GET
+from django.views.generic import FormView, TemplateView
 
 from schedule.models import Student
+from user.forms import RegisterForm
 from user.models import InviteToken
 
 
@@ -23,7 +25,7 @@ def get_invite_url(request, pk: int) -> HttpResponse:
     else:
         invite_token = InviteToken.objects.create(student_profile=student)
 
-    relative_url = reverse("user:accept-invite")
+    relative_url = reverse("user:register")
 
     full_invite_url = (
         f"{request.build_absolute_uri(relative_url)}?token={invite_token.id}"
@@ -58,3 +60,37 @@ class LoginView(DjangoLoginView):
             invite_token.delete()
 
         return response
+
+
+class RegisterView(FormView):
+    template_name = "accounts/register.html"
+    form_class = RegisterForm
+    success_url = reverse_lazy("user:register-complete")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["token"] = self.request.GET.get("token", "")
+        return context
+
+    @transaction.atomic
+    def form_valid(self, form):
+        user = form.save()
+
+        token_id = self.request.POST.get("token") or self.request.GET.get("token")
+
+        if token_id:
+            invite_token = InviteToken.objects.select_related("student_profile").get(
+                id=token_id
+            )
+            student = invite_token.student_profile
+
+            student.user = user
+            student.save(update_fields=["user"])
+
+            invite_token.delete()
+
+        return super().form_valid(form)
+
+
+class RegisterCompleteView(TemplateView):
+    template_name = "accounts/register_complete.html"
