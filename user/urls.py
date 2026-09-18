@@ -7,6 +7,7 @@ from user.views import (
     RegisterCompleteView,
     ActivateUserView,
     logout_view,
+    UserMenuView,
 )
 
 urlpatterns = [
@@ -35,6 +36,11 @@ urlpatterns = [
         "logout/",
         logout_view,
         name="logout",
+    ),
+    path(
+        "menu/",
+        UserMenuView.as_view(),
+        name="user-menu",
     ),
 ]
 

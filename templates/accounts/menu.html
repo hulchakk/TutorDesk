@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Menu
+{% endblock %}
+
+{% block content %}
+	{% if user.is_student %}
+    <h1>Student menu</h1>
+	{% endif %}
+  {% if user.is_teacher %}
+  	<h1>Teacher menu</h1>
+    <ul>
+      <li><a href="{% url 'schedule:students' %}">Students</a></li>
+      <li><a href="{% url 'schedule:groups' %}">Groups</a></li>
+      <li><a href="{% url 'schedule:teacher-schedule' %}">Schedule</a></li>
+    </ul>
+  {% endif %}
+  {% if user.is_staff %}
+  	<h1>Staff menu</h1>
+  {% endif %}
+  {% if user.is_superuser %}
+  	<h1>Admin menu</h1>
+  {% endif %}
+{% endblock %}

@@ -37,6 +37,7 @@ def get_invite_url(request, pk: int) -> HttpResponse:
 
 class LoginView(DjangoLoginView):
     template_name = "accounts/login.html"
+    next_page = reverse_lazy("user:user-menu")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -131,3 +132,14 @@ class ActivateUserView(TemplateView):
 def logout_view(request) -> HttpResponse:
     logout(request)
     return redirect("user:login")
+
+
+class UserMenuView(TemplateView):
+    template_name = "accounts/menu.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["user"] = self.request.user
+
+        return context
