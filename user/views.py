@@ -8,7 +8,7 @@ from django.views.generic import FormView, TemplateView
 
 from schedule.models import Student
 from user.forms import RegisterForm
-from user.models import InviteToken
+from user.models import InviteToken, ActivationToken
 
 
 @require_GET
@@ -76,6 +76,8 @@ class RegisterView(FormView):
     def form_valid(self, form):
         user = form.save()
 
+        activation_token = ActivationToken.objects.create(user=user)
+
         token_id = self.request.POST.get("token") or self.request.GET.get("token")
 
         if token_id:
@@ -94,3 +96,32 @@ class RegisterView(FormView):
 
 class RegisterCompleteView(TemplateView):
     template_name = "accounts/register_complete.html"
+
+
+class ActivateUserView(TemplateView):
+    template_name = "accounts/activate_user.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        token_id = self.request.GET.get("token")
+
+        success = False
+
+        if token_id:
+            try:
+                with transaction.atomic():
+                    token = ActivationToken.objects.select_related("user").get(
+                        id=token_id
+                    )
+                    user = token.user
+                    user.is_active = True
+                    user.save(update_fields=["is_active"])
+                    token.delete()
+                    success = True
+            except (ActivationToken.DoesNotExist, ValueError):
+                success = False
+
+        context["success"] = success
+
+        return context
