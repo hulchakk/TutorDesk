@@ -85,3 +85,13 @@ class InviteToken(models.Model):
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class ActivationToken(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="activation_token"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
