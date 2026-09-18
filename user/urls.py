@@ -1,6 +1,12 @@
 from django.urls import path
 
-from user.views import get_invite_url, LoginView, RegisterView, RegisterCompleteView
+from user.views import (
+    get_invite_url,
+    LoginView,
+    RegisterView,
+    RegisterCompleteView,
+    ActivateUserView,
+)
 
 urlpatterns = [
     path("login/", LoginView.as_view(), name="login"),
@@ -18,6 +24,11 @@ urlpatterns = [
         "register/complete/",
         RegisterCompleteView.as_view(),
         name="register-complete",
+    ),
+    path(
+        "activate_account/",
+        ActivateUserView.as_view(),
+        name="activate-user",
     ),
 ]
 

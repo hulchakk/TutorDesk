@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}
-	App - login
+  App - login
 {% endblock %}
 
 {% block content %}
@@ -10,9 +10,17 @@
     {% if token %}
       <input type="hidden" name="token" value="{{ token }}">
     {% endif %}
-    <label for="username">
-      Email:
-    </label>
+
+    {% if form.non_field_errors %}
+      <div class="form-error">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <label for="username">Email:</label>
+    {% if form.username.errors %}
+      <div class="field-error">{{ form.username.errors }}</div>
+    {% endif %}
     <input
       name="username"
       type="text"
@@ -21,9 +29,11 @@
       autofocus
       required
     >
-    <label for="password">
-      Password:
-    </label>
+
+    <label for="password">Password:</label>
+    {% if form.password.errors %}
+      <div class="field-error">{{ form.password.errors }}</div>
+    {% endif %}
     <input
       name="password"
       type="password"
@@ -31,6 +41,7 @@
       placeholder="Enter your password"
       required
     >
+
     <input type="submit" value="Login">
   </form>
 {% endblock %}

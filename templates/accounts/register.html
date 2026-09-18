@@ -11,9 +11,16 @@
       <input type="hidden" name="token" value="{{ token }}">
     {% endif %}
 
-    <label for="name">
-      Name:
-    </label>
+    {% if form.non_field_errors %}
+      <div class="form-error">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <label for="name">Name:</label>
+    {% if form.name.errors %}
+      <div class="field-error">{{ form.name.errors }}</div>
+    {% endif %}
     <input
       name="name"
       type="text"
@@ -23,9 +30,10 @@
       required
     >
 
-    <label for="email">
-      Email:
-    </label>
+    <label for="email">Email:</label>
+    {% if form.email.errors %}
+      <div class="field-error">{{ form.email.errors }}</div>
+    {% endif %}
     <input
       name="email"
       type="email"
@@ -34,9 +42,10 @@
       required
     >
 
-    <label for="password">
-      Password:
-    </label>
+    <label for="password">Password:</label>
+    {% if form.password.errors %}
+      <div class="field-error">{{ form.password.errors }}</div>
+    {% endif %}
     <input
       name="password"
       type="password"
@@ -45,13 +54,14 @@
       required
     >
 
-    <label for="complete_password">
-      Confirm Password:
-    </label>
+    <label for="repeat_password">Confirm Password:</label>
+    {% if form.repeat_password.errors %}
+      <div class="field-error">{{ form.repeat_password.errors }}</div>
+    {% endif %}
     <input
-      name="complete_password"
+      name="repeat_password"
       type="password"
-      id="complete_password"
+      id="repeat_password"
       placeholder="Confirm your password"
       required
     >
