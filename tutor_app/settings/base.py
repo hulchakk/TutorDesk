@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django_htmx",
     "user",
     "schedule",
+    "payments",
 ]
 
 MIDDLEWARE = [
