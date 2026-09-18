@@ -1,5 +1,7 @@
+from django.contrib.auth.views import LoginView as DjangoLoginView
+from django.db import transaction
 from django.http import HttpResponse
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 
@@ -28,3 +30,31 @@ def get_invite_url(request, pk: int) -> HttpResponse:
     )
 
     return HttpResponse(full_invite_url, content_type="text/plain; charset=utf-8")
+
+
+class LoginView(DjangoLoginView):
+    template_name = "accounts/login.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["token"] = self.request.GET.get("token", "")
+        return context
+
+    @transaction.atomic
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        token_id = self.request.POST.get("token") or self.request.GET.get("token")
+
+        if token_id:
+            invite_token = InviteToken.objects.select_related("student_profile").get(
+                id=token_id
+            )
+            student = invite_token.student_profile
+
+            student.user = self.request.user
+            student.save(update_fields=["user"])
+
+            invite_token.delete()
+
+        return response
