@@ -6,6 +6,7 @@ from user.views import (
     RegisterView,
     RegisterCompleteView,
     ActivateUserView,
+    logout_view,
 )
 
 urlpatterns = [
@@ -29,6 +30,11 @@ urlpatterns = [
         "activate_account/",
         ActivateUserView.as_view(),
         name="activate-user",
+    ),
+    path(
+        "logout/",
+        logout_view,
+        name="logout",
     ),
 ]
 

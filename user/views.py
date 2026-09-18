@@ -1,7 +1,8 @@
+from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.db import transaction
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_GET
 from django.views.generic import FormView, TemplateView
@@ -125,3 +126,8 @@ class ActivateUserView(TemplateView):
         context["success"] = success
 
         return context
+
+
+def logout_view(request) -> HttpResponse:
+    logout(request)
+    return redirect("user:login")
