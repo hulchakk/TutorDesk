@@ -1,3 +1,6 @@
+import uuid
+from typing import TYPE_CHECKING
+
 from django.contrib.auth.models import (
     AbstractUser,
     BaseUserManager,
@@ -72,3 +75,13 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.name} - {self.email}"
+
+
+class InviteToken(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    student_profile = models.OneToOneField(
+        "schedule.Student", on_delete=models.CASCADE, related_name="invite_token"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
