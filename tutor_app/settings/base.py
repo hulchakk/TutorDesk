@@ -27,6 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "DJANGO_SECRET_KEY")
 
+MONOBANK_TOKEN = os.getenv("MONOBANK_TOKEN")
 
 # Application definition
 
