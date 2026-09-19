@@ -4,7 +4,7 @@ import httpx
 from django.conf import settings
 
 from services.payments.exeptions import PaymentError
-from services.payments.interfaces import IPaymentsService
+from services.payments.interfaces import IPaymentsService, CheckoutSession
 
 HEADERS = {
     "X-Token": settings.MONOBANK_TOKEN,
@@ -23,7 +23,7 @@ class MonobankService(IPaymentsService):
         redirect_url: str,
         web_hook_url: str,
         ccy: int = 980,
-    ) -> str:
+    ) -> CheckoutSession:
         try:
             response = httpx.post(
                 API_CREATE_INVOICE_URL,
@@ -46,7 +46,10 @@ class MonobankService(IPaymentsService):
             if response.status_code != 200:
                 raise PaymentError(data)
 
-            return data["pageUrl"]
+            return CheckoutSession(
+                checkout_url=data["pageUrl"],
+                invoice_id=data["invoiceId"],
+            )
         except httpx.RequestError:
             raise PaymentError("Something went wrong while creating payment.")
 
