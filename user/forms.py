@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
 User = get_user_model()
@@ -48,3 +49,51 @@ class RegisterForm(forms.ModelForm):
             user.save()
 
         return user
+
+
+class ChangePasswordForm(forms.Form):
+    old_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"placeholder": "Old Password"}),
+    )
+    new_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"placeholder": "New Password"}),
+    )
+    repeat_new_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"placeholder": "Repeat New Password"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+
+    def clean_old_password(self):
+        old_password = self.cleaned_data.get("old_password")
+
+        if self.user and not self.user.check_password(old_password):
+            raise forms.ValidationError("Incorrect old password.")
+
+        return old_password
+
+    def clean_new_password(self):
+        new_password = self.cleaned_data.get("new_password")
+
+        validate_password(password=new_password, user=self.user)
+
+        return new_password
+
+    def clean_repeat_new_password(self):
+        new_password = self.cleaned_data.get("new_password")
+        repeat_new_password = self.cleaned_data.get("repeat_new_password")
+
+        if new_password != repeat_new_password:
+            raise forms.ValidationError("Passwords do not match.")
+
+        return repeat_new_password
+
+    def save(self, request=None):
+        new_password = self.cleaned_data["new_password"]
+
+        self.user.set_password(new_password)
+        self.user.save()
+
+        return self.user

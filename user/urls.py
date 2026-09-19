@@ -8,6 +8,7 @@ from user.views import (
     ActivateUserView,
     logout_view,
     UserMenuView,
+    change_password_view,
 )
 
 urlpatterns = [
@@ -41,6 +42,11 @@ urlpatterns = [
         "menu/",
         UserMenuView.as_view(),
         name="user-menu",
+    ),
+    path(
+        "change_password/",
+        change_password_view,
+        name="change-password",
     ),
 ]
 

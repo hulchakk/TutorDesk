@@ -1,14 +1,14 @@
-from django.contrib.auth import logout
+from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.db import transaction
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_GET
 from django.views.generic import FormView, TemplateView
 
 from schedule.models import Student
-from user.forms import RegisterForm
+from user.forms import RegisterForm, ChangePasswordForm
 from user.models import InviteToken, ActivationToken
 
 
@@ -143,3 +143,16 @@ class UserMenuView(TemplateView):
         context["user"] = self.request.user
 
         return context
+
+
+def change_password_view(request):
+    if request.method == "POST":
+        form = ChangePasswordForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)
+            return redirect("user:user-menu")
+    else:
+        form = ChangePasswordForm(user=request.user)
+
+    return render(request, "accounts/change_password.html", {"form": form})
