@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}
+	Request password reset
+{% endblock %}
+
+{% block content %}
+  <h1>Enter your email to request password reset</h1>
+  <form method="post" action="{% url 'user:reset-password-request' %}">
+    {% csrf_token %}
+    <label>
+      Email:
+      <input type="email" name="email" required>
+    </label>
+    <input type="submit" value="Request password reset">
+  </form>
+{% endblock %}

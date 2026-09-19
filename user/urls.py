@@ -9,6 +9,8 @@ from user.views import (
     logout_view,
     UserMenuView,
     change_password_view,
+    reset_password_request_view,
+    reset_password_complete_view,
 )
 
 urlpatterns = [
@@ -47,6 +49,16 @@ urlpatterns = [
         "change_password/",
         change_password_view,
         name="change-password",
+    ),
+    path(
+        "reset_password_request/",
+        reset_password_request_view,
+        name="reset-password-request",
+    ),
+    path(
+        "reset_password_complete/",
+        reset_password_complete_view,
+        name="reset-password-complete",
     ),
 ]
 

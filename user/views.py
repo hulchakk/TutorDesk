@@ -1,4 +1,4 @@
-from django.contrib.auth import logout, update_session_auth_hash
+from django.contrib.auth import logout, update_session_auth_hash, get_user_model
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.db import transaction
 from django.http import HttpResponse
@@ -8,8 +8,8 @@ from django.views.decorators.http import require_GET
 from django.views.generic import FormView, TemplateView
 
 from schedule.models import Student
-from user.forms import RegisterForm, ChangePasswordForm
-from user.models import InviteToken, ActivationToken
+from user.forms import RegisterForm, ChangePasswordForm, ResetPasswordForm
+from user.models import InviteToken, ActivationToken, ResetPasswordToken
 
 
 @require_GET
@@ -79,6 +79,8 @@ class RegisterView(FormView):
         user = form.save()
 
         activation_token = ActivationToken.objects.create(user=user)
+
+        # TODO: send user activation url via email
 
         token_id = self.request.POST.get("token") or self.request.GET.get("token")
 
@@ -156,3 +158,82 @@ def change_password_view(request):
         form = ChangePasswordForm(user=request.user)
 
     return render(request, "accounts/change_password.html", {"form": form})
+
+
+def reset_password_request_view(request) -> HttpResponse:
+    if request.method == "POST":
+        User = get_user_model()
+
+        email = request.POST.get("email")
+        try:
+            user = User.objects.select_related("reset_password_token").get(email=email)
+        except (User.DoesNotExist, ValueError):
+            return render(
+                request,
+                template_name="accounts/reset_password/requested_successfully.html",
+            )
+
+        reset_password_token = getattr(user, "reset_password_token", None)
+
+        if reset_password_token:
+            if reset_password_token.is_expired:
+                reset_password_token.delete()
+                reset_password_token = None
+            else:
+                return render(
+                    request,
+                    template_name="accounts/reset_password/already_requested.html",
+                )
+
+        if not reset_password_token:
+            reset_password_token = ResetPasswordToken.objects.create(user=user)
+
+        # TODO: send reset_password url via email
+
+        return render(
+            request,
+            template_name="accounts/reset_password/requested_successfully.html",
+        )
+
+    return render(request, "accounts/reset_password/request.html")
+
+
+def reset_password_complete_view(request) -> HttpResponse:
+    token_id = request.GET.get("token") or request.POST.get("token")
+
+    try:
+        if not token_id:
+            raise ValueError("Token ID missing.")
+
+        token = ResetPasswordToken.objects.select_related("user").get(id=token_id)
+
+        if token.is_expired:
+            token.delete()
+            raise ValueError("Token expired.")
+
+    except (ResetPasswordToken.DoesNotExist, ValueError):
+        return render(
+            request,
+            template_name="accounts/reset_password/failed.html",
+        )
+
+    if request.method == "POST":
+        form = ResetPasswordForm(user=token.user, data=request.POST)
+        if form.is_valid():
+            form.save()
+            token.delete()
+            return render(
+                request,
+                template_name="accounts/reset_password/successful.html",
+            )
+    else:
+        form = ResetPasswordForm(user=token.user)
+
+    return render(
+        request,
+        template_name="accounts/reset_password/complete.html",
+        context={
+            "form": form,
+            "token": token_id,
+        },
+    )

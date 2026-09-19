@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block title %}
+	Reset password
+{% endblock %}
+
+{% block content %}
+  <h1>Your password has been successfully changed.</h1>
+  <p>You can now <a href="{% url 'user:login' %}">Log in</a>.</p>
+{% endblock %}
