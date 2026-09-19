@@ -1,7 +1,10 @@
 from datetime import timedelta
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
+from django.utils import timezone
 
 
 class ActiveModelsManager(models.Manager):
@@ -12,7 +15,7 @@ class ActiveModelsManager(models.Manager):
 class Student(models.Model):
     name = models.CharField(null=False, max_length=255)
     teacher = models.ForeignKey(
-        get_user_model(),
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         null=True,
         blank=True,
@@ -25,12 +28,8 @@ class Student(models.Model):
         blank=True,
         related_name="students",
     )
-    lessons_count = models.IntegerField(null=False, default=0)
-    lessons_price = models.DecimalField(
-        null=False, max_digits=10, decimal_places=2, default=600
-    )
     user = models.ForeignKey(
-        get_user_model(),
+        settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.CASCADE,
@@ -40,6 +39,58 @@ class Student(models.Model):
 
     objects = models.Manager()
     active_objects = ActiveModelsManager()
+
+    @property
+    def total_lessons_count(self) -> int:
+        now = timezone.now()
+        result = self.subscriptions.filter(
+            models.Q(lessons_left__lt=0)
+            | (
+                models.Q(lessons_left__gt=0)
+                & (models.Q(expires_at__gte=now) | models.Q(expires_at__isnull=True))
+            )
+        ).aggregate(total=models.Sum("lessons_left"))
+
+        return result["total"] or 0
+
+    def consume_lessons(self, count: int = 1) -> int:
+        if count <= 0:
+            return 0
+
+        now = timezone.now()
+
+        with transaction.atomic():
+            active_subscriptions = list(
+                self.subscriptions.select_for_update()
+                .filter(lessons_left__gt=0)
+                .filter(
+                    models.Q(expires_at__gte=now) | models.Q(expires_at__isnull=True)
+                )
+                .order_by(models.F("expires_at").asc(nulls_last=True), "created_at")
+            )
+
+            remaining_to_consume = count
+
+            for subscription in active_subscriptions:
+                if remaining_to_consume <= 0:
+                    break
+
+                if subscription.lessons_left >= remaining_to_consume:
+                    subscription.lessons_left -= remaining_to_consume
+                    subscription.save(update_fields=["lessons_left", "updated_at"])
+                    remaining_to_consume = 0
+                else:
+                    remaining_to_consume -= subscription.lessons_left
+                    subscription.lessons_left = 0
+                    subscription.save(update_fields=["lessons_left", "updated_at"])
+
+            if remaining_to_consume > 0:
+                self.subscriptions.create(
+                    lessons_left=-remaining_to_consume,
+                    expires_at=None,
+                )
+
+            return count
 
     def clean(self):
         super().clean()

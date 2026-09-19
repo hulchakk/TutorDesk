@@ -10,7 +10,7 @@ from schedule.models import Student, Group, Lesson, GroupLesson
 class StudentForm(forms.ModelForm):
     class Meta:
         model = Student
-        fields = ["name", "lessons_price"]
+        fields = ["name"]
         widgets = {
             "name": forms.TextInput(
                 attrs={
@@ -18,14 +18,10 @@ class StudentForm(forms.ModelForm):
                     "placeholder": "Student Name",
                 }
             ),
-            "lessons_price": forms.NumberInput(
-                attrs={"class": "form-control", "placeholder": "Lessons price"}
-            ),
         }
 
     def __init__(self, *args, **kwargs):
         super(StudentForm, self).__init__(*args, **kwargs)
-        self.fields["lessons_price"].initial = Decimal("600.00")
 
 
 class GroupForm(forms.ModelForm):
