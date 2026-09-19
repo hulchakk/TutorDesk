@@ -51,10 +51,7 @@ class RegisterForm(forms.ModelForm):
         return user
 
 
-class ChangePasswordForm(forms.Form):
-    old_password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"placeholder": "Old Password"}),
-    )
+class ResetPasswordForm(forms.Form):
     new_password = forms.CharField(
         widget=forms.PasswordInput(attrs={"placeholder": "New Password"}),
     )
@@ -65,14 +62,6 @@ class ChangePasswordForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-
-    def clean_old_password(self):
-        old_password = self.cleaned_data.get("old_password")
-
-        if self.user and not self.user.check_password(old_password):
-            raise forms.ValidationError("Incorrect old password.")
-
-        return old_password
 
     def clean_new_password(self):
         new_password = self.cleaned_data.get("new_password")
@@ -97,3 +86,21 @@ class ChangePasswordForm(forms.Form):
         self.user.save()
 
         return self.user
+
+
+class ChangePasswordForm(ResetPasswordForm):
+    old_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"placeholder": "Old Password"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+
+    def clean_old_password(self):
+        old_password = self.cleaned_data.get("old_password")
+
+        if self.user and not self.user.check_password(old_password):
+            raise forms.ValidationError("Incorrect old password.")
+
+        return old_password
