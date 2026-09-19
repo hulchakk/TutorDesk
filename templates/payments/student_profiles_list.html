@@ -25,7 +25,7 @@
         <td>{{ profile.lessons_count }}</td>
         <td>{{ profile.lessons_price }}</td>
         <td>
-          <form method="post" action="{% url 'payments:buy_lessons' pk=profile.id %}">
+          <form method="post" action="{% url 'payments:buy-lessons' pk=profile.id %}">
             {% csrf_token %}
             <input type="number" name="lessons_amount">
             <input type="submit" value="Buy lessons">
