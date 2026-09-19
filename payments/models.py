@@ -22,7 +22,7 @@ class Order(models.Model):
         choices=OrderStatus.choices, default=OrderStatus.PENDING, max_length=10
     )
 
-    invoice_id = models.PositiveIntegerField(null=True, unique=True)
+    invoice_id = models.CharField(max_length=255, null=True)
     paid_at = models.DateTimeField(null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
