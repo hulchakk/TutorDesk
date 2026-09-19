@@ -23,7 +23,6 @@
         <th>Id</th>
         <th>Name</th>
         <th>Lessons left</th>
-        <th>Lessons price</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -39,8 +38,7 @@
             {{ student.name }}
           </a>
         </td>
-        <td>{{ student.lessons_count }}</td>
-        <td>{{ student.lessons_price }}</td>
+        <td>{{ student.total_lessons_count }}</td>
         <td>
           <a href="#"
              hx-post="{% url 'schedule:student-delete' pk=student.pk %}"

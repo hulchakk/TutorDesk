@@ -22,7 +22,6 @@
       <th>Id</th>
       <th>Name</th>
       <th>Lessons left</th>
-      <th>Lessons price</th>
       <th>Delete student</th>
     </tr>
     {% for student in students %}
@@ -33,8 +32,7 @@
              hx-target="#form-container"
              hx-swap="innerHTML"
       >{{ student.name }}</a></td>
-      <td>{{ student.lessons_count }}</td>
-      <td>{{ student.lessons_price }}</td>
+      <td>{{ student.total_lessons_count }}</td>
       <td><a href="#"
              hx-post="{% url 'schedule:student-delete' pk=student.pk %}"
              hx-confirm="Are you sure you want to delete this student?"
