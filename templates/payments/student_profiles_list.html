@@ -10,6 +10,7 @@
       <th>Name</th>
       <th>Type</th>
       <th>Lessons balance</th>
+      <th>Lessons price</th>
       <th>Buy lessons</th>
     </tr>
     {% for profile in profiles %}
@@ -22,7 +23,13 @@
           <td>INDIVIDUAL</td>
         {% endif %}
         <td>{{ profile.lessons_count }}</td>
-        <td><a href="#">Buy lessons</a></td>
+        <td>{{ profile.lessons_price }}</td>
+        <td>
+          <form method="post" action="{% url 'payments:buy_lessons' pk=profile.id %}">
+            {% csrf_token %}
+            <input type="number" name="lessons_amount">
+            <input type="submit" value="Buy lessons">
+          </form></td>
       </tr>
     {% endfor %}
   </table>
