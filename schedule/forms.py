@@ -1,27 +1,57 @@
 from datetime import timedelta
-from decimal import Decimal
 
 from django import forms
 from django.db.models import Q
 
 from schedule.models import Student, Group, Lesson, GroupLesson
+from subscriptions.models import TariffPlan
 
 
 class StudentForm(forms.ModelForm):
+    available_tariffs = forms.ModelMultipleChoiceField(
+        queryset=TariffPlan.objects.none(),
+        required=False,
+    )
+
     class Meta:
         model = Student
-        fields = ["name"]
-        widgets = {
-            "name": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "Student Name",
-                }
-            ),
-        }
+        fields = ["name", "available_tariffs"]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, teacher=None, **kwargs):
         super(StudentForm, self).__init__(*args, **kwargs)
+
+        if teacher:
+            self.fields["available_tariffs"].queryset = TariffPlan.objects.filter(
+                teachers=teacher,
+                is_active=True,
+            )
+        else:
+            self.fields["available_tariffs"].queryset = TariffPlan.objects.filter(
+                is_active=True
+            )
+
+        if self.instance and self.instance.pk:
+            self.fields["available_tariffs"].initial = (
+                self.instance.available_tariffs.values_list("id", flat=True)
+            )
+
+    def _save_tariffs(self, student):
+        selected_tariffs = self.cleaned_data.get("available_tariffs", [])
+        student.available_tariffs.set(selected_tariffs)
+
+    def save(self, commit=True):
+        student = super().save(commit=commit)
+
+        if commit:
+            self._save_tariffs(student)
+        else:
+
+            def save_m2m():
+                self._save_tariffs(student)
+
+            self.save_m2m = save_m2m
+
+        return student
 
 
 class GroupForm(forms.ModelForm):

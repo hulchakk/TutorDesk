@@ -2,7 +2,7 @@
       hx-target="this"
       hx-swap="outerHTML">
 
-<h1>Update student {{ student.name }}</h1>
+  <h1>Update student {{ student.name }}</h1>
 
   {% if form.non_field_errors %}
     <div class="form-error">
@@ -19,10 +19,10 @@
   </label>
 
   <label>
-    Price per lesson:
-    {{ form.lessons_price }}
-    {% if form.lessons_price.errors %}
-      <span class="field-error">{{ form.lessons_price.errors }}</span>
+    Available Tariffs:
+    {{ form.available_tariffs }}
+    {% if form.available_tariffs.errors %}
+      <span class="field-error">{{ form.available_tariffs.errors }}</span>
     {% endif %}
   </label>
 
