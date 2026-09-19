@@ -41,7 +41,7 @@
       placeholder="Enter your password"
       required
     >
-
+    <a href="{% url 'user:reset-password-request' %}">Forgot password?</a>
     <input type="submit" value="Login">
   </form>
 {% endblock %}
