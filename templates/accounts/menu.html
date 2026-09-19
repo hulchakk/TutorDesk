@@ -5,8 +5,12 @@
 {% endblock %}
 
 {% block content %}
+  <a href="{% url 'user:logout' %}">Log out</a>
 	{% if user.is_student %}
     <h1>Student menu</h1>
+    <ul>
+      <li><a href="{% url 'payments:student-profiles' %}">My groups and teacher</a></li>
+    </ul>
 	{% endif %}
   {% if user.is_teacher %}
   	<h1>Teacher menu</h1>
