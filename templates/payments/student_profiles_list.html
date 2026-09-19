@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}
+	My teachers and groups
+{% endblock %}
+
+{% block content %}
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Lessons balance</th>
+      <th>Buy lessons</th>
+    </tr>
+    {% for profile in profiles %}
+    	<tr>
+        {% if profile.group %}
+        	<td>{{ profile.group.name }}</td>
+          <td>GROUP</td>
+        {% else %}
+          <td>{{ profile.teacher.name }}</td>
+          <td>INDIVIDUAL</td>
+        {% endif %}
+        <td>{{ profile.lessons_count }}</td>
+        <td><a href="#">Buy lessons</a></td>
+      </tr>
+    {% endfor %}
+  </table>
+{% endblock %}
