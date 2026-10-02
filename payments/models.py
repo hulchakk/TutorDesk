@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.db import models
 
 from schedule.models import Student
+from subscriptions.models import TariffPlan
 
 
 class OrderStatus(models.TextChoices):
@@ -15,6 +16,10 @@ class Order(models.Model):
     student = models.ForeignKey(
         Student, on_delete=models.CASCADE, related_name="orders"
     )
+    tariff = models.ForeignKey(
+        TariffPlan, on_delete=models.CASCADE, related_name="orders"
+    )
+
     price_per_lesson = models.DecimalField(max_digits=10, decimal_places=2)
     lessons_amount = models.PositiveIntegerField(default=1)
 
