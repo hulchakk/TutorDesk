@@ -1,17 +1,21 @@
 import json
+from datetime import timedelta
 
 from django.db import transaction
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils import timezone
+from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from django.views.generic import ListView
-from django.urls import reverse
+from django.views.generic import DetailView, ListView
 
 from payments.models import Order, OrderStatus
 from schedule.models import Student
+from services.payments.interfaces import CheckoutSession, IPaymentsService
 from services.payments.monobank import MonobankService, verify_monobank_signature
+from subscriptions.models import StudentSubscription, TariffType
 
 
 class StudentProfilesListView(ListView):
@@ -19,45 +23,70 @@ class StudentProfilesListView(ListView):
     context_object_name = "profiles"
 
     def get_queryset(self):
-        return self.request.user.student_profiles.select_related(
-            "teacher",
-            "group",
+        return self.request.user.student_profiles.select_related("teacher", "group")
+
+
+class AvailableTariffsView(DetailView):
+    template_name = "payments/buy_lessons.html"
+    context_object_name = "profile"
+
+    def get_queryset(self):
+        return Student.active_objects.filter(user=self.request.user).prefetch_related(
+            "available_tariffs"
         )
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["tariff_type"] = TariffType
+        return context
 
-@require_POST
-def buy_lessons_view(request, pk: int) -> HttpResponse:
-    student = get_object_or_404(
-        Student.active_objects,
-        pk=pk,
-        user=request.user,
-    )
 
-    lessons_amount = int(request.POST.get("lessons_amount", 1))
+class BuyLessonsView(View):
+    def post(self, request, pk, tariff_pk):
+        student = get_object_or_404(
+            Student.active_objects.filter(user=request.user).prefetch_related(
+                "available_tariffs"
+            ),
+            pk=pk,
+        )
+        tariff = get_object_or_404(student.available_tariffs, pk=tariff_pk)
 
-    order = Order.objects.create(
-        student=student,
-        price_per_lesson=student.lessons_price,
-        lessons_amount=lessons_amount,
-    )
+        if tariff.tariff_type == TariffType.PER_LESSON:
+            try:
+                lessons_amount = int(request.POST.get("lessons_amount", 1))
+                if lessons_amount <= 0:
+                    lessons_amount = 1
+            except (ValueError, TypeError):
+                lessons_amount = 1
+        elif tariff.tariff_type == TariffType.PACKAGE:
+            lessons_amount = tariff.default_lessons_amount
+        else:
+            lessons_amount = 1
 
-    total_amount = int(order.price_per_lesson * lessons_amount * 100)
+        total_amount = lessons_amount * int(tariff.price_per_lesson) * 100
 
-    redirect_url = request.build_absolute_uri(reverse("payments:student-profiles"))
+        order = Order.objects.create(
+            student=student,
+            tariff=tariff,
+            price_per_lesson=tariff.price_per_lesson,
+            lessons_amount=lessons_amount,
+        )
 
-    webhook_url = request.build_absolute_uri(reverse("payments:monobank-webhook"))
+        payment_service: IPaymentsService = MonobankService()
+        web_hook_url = request.build_absolute_uri(reverse("payments:monobank-webhook"))
+        redirect_url = request.build_absolute_uri(reverse("payments:student-profiles"))
 
-    checkout_session = MonobankService().create_checkout_session(
-        order_id=str(order.id),
-        amount=total_amount,
-        redirect_url=redirect_url,
-        web_hook_url=webhook_url,
-    )
+        checkout_session: CheckoutSession = payment_service.create_checkout_session(
+            order_id=str(order.id),
+            amount=total_amount,
+            redirect_url=redirect_url,
+            web_hook_url=web_hook_url,
+        )
 
-    order.invoice_id = checkout_session.invoice_id
-    order.save(update_fields=["invoice_id"])
+        order.invoice_id = checkout_session.invoice_id
+        order.save(update_fields=["invoice_id"])
 
-    return redirect(checkout_session.checkout_url)
+        return redirect(checkout_session.checkout_url)
 
 
 @csrf_exempt
@@ -75,14 +104,19 @@ def monobank_webhook_view(request) -> HttpResponse:
     except json.JSONDecodeError:
         return HttpResponseBadRequest("Invalid JSON")
 
-    order_id = int(data.get("reference"))
+    reference = data.get("reference")
     status = data.get("status")
 
-    if not order_id or not status:
+    if not reference or not status:
         return HttpResponseBadRequest("Missing required fields")
 
     try:
-        order = Order.objects.get(pk=order_id)
+        order_id = int(reference)
+    except (ValueError, TypeError):
+        return HttpResponseBadRequest("Invalid reference format")
+
+    try:
+        order = Order.objects.select_related("tariff", "student").get(pk=order_id)
     except Order.DoesNotExist:
         return HttpResponse("Order not found, ignored.", status=200)
 
@@ -91,11 +125,16 @@ def monobank_webhook_view(request) -> HttpResponse:
             if order.status != OrderStatus.COMPLETED:
                 order.status = OrderStatus.COMPLETED
                 order.paid_at = timezone.now()
-                order.save(update_fields=["status"])
+                order.save(update_fields=["status", "paid_at"])
 
                 student = order.student
-                student.lessons_count += order.lessons_amount
-                student.save(update_fields=["lessons_count"])
+                StudentSubscription.objects.create(
+                    student=student,
+                    tariff_plan=order.tariff,
+                    lessons_left=order.lessons_amount,
+                    expires_at=timezone.now()
+                    + timedelta(days=order.tariff.duration_days),
+                )
 
     elif status in ["failure", "reversed", "expired"]:
         order.status = OrderStatus.FAILED

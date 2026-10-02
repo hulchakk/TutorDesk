@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Select tariff
+{% endblock %}
+
+{% block content %}
+	{% for tariff in profile.available_tariffs.all %}
+    {{ tariff }}
+    <form method="post" action="{% url 'payments:buy-lessons' pk=profile.id tariff_pk=tariff.id %}">
+      {% csrf_token %}
+      {% if tariff.tariff_type == tariff_type.PER_LESSON %}
+          <input type="number" name="lessons_amount">
+          <input type="submit" value="Buy lessons">
+      {% elif tariff.tariff_type == tariff_type.PACKAGE %}
+          <input type="submit" value="Buy subscription">
+      {% endif %}
+    </form>
+    <hr>
+	{% endfor %}
+{% endblock %}
