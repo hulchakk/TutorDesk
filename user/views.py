@@ -13,6 +13,11 @@ from django.views.decorators.http import require_GET
 from django.views.generic import FormView, TemplateView
 
 from schedule.models import Student
+from services.notifications.tasks import (
+    send_activation_email_task,
+    send_password_reset_email_task,
+    send_password_changed_email_task,
+)
 from user.decorators import teacher_required
 from user.forms import RegisterForm, ChangePasswordForm, ResetPasswordForm
 from user.models import InviteToken, ActivationToken, ResetPasswordToken
@@ -30,6 +35,14 @@ def find_invite_token(token_id: str | None) -> InviteToken | None:
         )
     except ValidationError:
         return None
+
+
+def notify_password_changed(request, user) -> None:
+    send_password_changed_email_task.delay(
+        user.email,
+        user.name,
+        request.build_absolute_uri(reverse("user:reset-password-request")),
+    )
 
 
 @teacher_required
@@ -103,25 +116,36 @@ class RegisterView(FormView):
         )
         return context
 
-    @transaction.atomic
     def form_valid(self, form):
-        user = form.save()
+        try:
+            with transaction.atomic():
+                user = form.save()
 
-        activation_token = ActivationToken.objects.create(user=user)
+                activation_token = ActivationToken.objects.create(user=user)
 
-        # TODO: send user activation url via email
+                token_id = self.request.POST.get("token") or self.request.GET.get(
+                    "token"
+                )
 
-        token_id = self.request.POST.get("token") or self.request.GET.get("token")
+                invite_token = find_invite_token(token_id)
 
-        invite_token = find_invite_token(token_id)
+                if invite_token:
+                    student = invite_token.student_profile
 
-        if invite_token:
-            student = invite_token.student_profile
+                    student.user = user
+                    student.save(update_fields=["user"])
 
-            student.user = user
-            student.save(update_fields=["user"])
+                    invite_token.delete()
 
-            invite_token.delete()
+                activation_link = self.request.build_absolute_uri(
+                    f"{reverse('user:activate-user')}?token={activation_token.id}"
+                )
+                send_activation_email_task.delay(user.email, user.name, activation_link)
+        except Exception as e:
+            messages.warning(
+                form.request,
+                "Activation email will be sent shortly. Check spam folder.",
+            )
 
         return super().form_valid(form)
 
@@ -182,6 +206,7 @@ def change_password_view(request):
         if form.is_valid():
             user = form.save()
             update_session_auth_hash(request, user)
+            notify_password_changed(request, user)
             messages.success(request, "Password changed")
             return redirect("user:user-menu")
     else:
@@ -208,17 +233,22 @@ def reset_password_request_view(request) -> HttpResponse:
         if reset_password_token:
             if reset_password_token.is_expired:
                 reset_password_token.delete()
-                reset_password_token = None
             else:
                 return render(
                     request,
                     template_name="accounts/reset_password/already_requested.html",
                 )
 
-        if not reset_password_token:
-            reset_password_token = ResetPasswordToken.objects.create(user=user)
+        reset_link_base = request.build_absolute_uri(
+            reverse("user:reset-password-complete")
+        )
 
-        # TODO: send reset_password url via email
+        reset_password_token = ResetPasswordToken.objects.create(user=user)
+        send_password_reset_email_task.delay(
+            user.email,
+            user.name,
+            f"{reset_link_base}?token={reset_password_token.id}",
+        )
 
         return render(
             request,
@@ -250,8 +280,9 @@ def reset_password_complete_view(request) -> HttpResponse:
     if request.method == "POST":
         form = ResetPasswordForm(user=token.user, data=request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
             token.delete()
+            notify_password_changed(request, user)
             return render(
                 request,
                 template_name="accounts/reset_password/successful.html",
