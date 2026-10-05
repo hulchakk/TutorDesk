@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>{{ subject }}</title>
+</head>
+<body style="margin:0;padding:0;background:#fcf3ef;color:#1e1e1e;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;">
+  <span style="display:none;max-height:0;overflow:hidden;opacity:0;">{% block preheader %}{% endblock %}</span>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fcf3ef;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+          <tr>
+            <td style="padding:0 4px 20px;font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#1e1e1e;">
+              Tutor App
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#ffffff;border:1px solid #f1e4df;border-radius:18px;padding:36px 32px;box-shadow:0 8px 24px rgba(90,50,40,0.06);">
+              <h1 style="margin:0 0 16px;font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:26px;font-weight:600;line-height:1.15;color:#1e1e1e;">
+                {% block heading %}{% endblock %}
+              </h1>
+
+              {% block content %}{% endblock %}
+
+              {% if action_url %}
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 8px;">
+                  <tr>
+                    <td style="border-radius:8px;background:#1e1e1e;">
+                      <a href="{{ action_url }}" target="_blank" style="display:inline-block;padding:12px 22px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
+                        {{ action_label }}
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin:20px 0 0;font-size:13px;color:#a8a09d;">
+                  If the button doesn't work, copy this link into your browser:<br>
+                  <a href="{{ action_url }}" style="color:#7b7472;word-break:break-all;">{{ action_url }}</a>
+                </p>
+              {% endif %}
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:20px 4px 0;font-size:13px;color:#a8a09d;">
+              {% block footer %}You received this email because you have an account in Tutor App.{% endblock %}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
