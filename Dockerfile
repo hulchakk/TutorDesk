@@ -4,6 +4,7 @@ WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV DJANGO_SETTINGS_MODULE=tutor_app.settings.dev
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
@@ -15,6 +16,4 @@ RUN pip install uv && uv pip install --system -r pyproject.toml
 
 COPY . .
 
-RUN python manage.py collectstatic --noinput --settings=tutor_app.settings.dev
-
-CMD ["sh", "-c", "python manage.py wait_for_db && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+CMD ["sh", "-c", "python manage.py wait_for_db && python manage.py migrate && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"]

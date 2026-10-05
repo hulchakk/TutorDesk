@@ -13,9 +13,7 @@ def handle_lesson_status_change(sender, instance: Lesson, created, **kwargs):
     if created:
         return
 
-    previous_instance = Lesson.objects.filter(pk=instance.pk).values(
-        "status"
-    ).first()
+    previous_instance = Lesson.objects.filter(pk=instance.pk).values("status").first()
     if not previous_instance:
         return
 
@@ -25,11 +23,21 @@ def handle_lesson_status_change(sender, instance: Lesson, created, **kwargs):
     if old_status == new_status:
         return
 
-    if new_status == LessonStatusEnum.FINISHED and old_status != LessonStatusEnum.CANCELED:
+    if (
+        new_status == LessonStatusEnum.FINISHED
+        and old_status != LessonStatusEnum.CANCELED
+    ):
         instance.student.consume_lessons(1)
-        logger.info("Consumed 1 lesson for student %s (individual lesson %s)", instance.student.id, instance.id)
+        logger.info(
+            "Consumed 1 lesson for student %s (individual lesson %s)",
+            instance.student.id,
+            instance.id,
+        )
 
-    elif old_status == LessonStatusEnum.FINISHED and new_status != LessonStatusEnum.FINISHED:
+    elif (
+        old_status == LessonStatusEnum.FINISHED
+        and new_status != LessonStatusEnum.FINISHED
+    ):
         instance.student.consume_lessons(-1)
         logger.info(
             "Refunded 1 lesson for student %s (individual lesson %s)",
@@ -43,9 +51,9 @@ def handle_group_lesson_status_change(sender, instance: GroupLesson, created, **
     if created:
         return
 
-    previous_instance = GroupLesson.objects.filter(pk=instance.pk).values(
-        "status"
-    ).first()
+    previous_instance = (
+        GroupLesson.objects.filter(pk=instance.pk).values("status").first()
+    )
     if not previous_instance:
         return
 
@@ -55,7 +63,10 @@ def handle_group_lesson_status_change(sender, instance: GroupLesson, created, **
     if old_status == new_status:
         return
 
-    if new_status == LessonStatusEnum.FINISHED and old_status != LessonStatusEnum.CANCELED:
+    if (
+        new_status == LessonStatusEnum.FINISHED
+        and old_status != LessonStatusEnum.CANCELED
+    ):
         present_student_ids = [
             record["student_id"]
             for record in instance.attendance_list
@@ -67,7 +78,9 @@ def handle_group_lesson_status_change(sender, instance: GroupLesson, created, **
                 student = Student.objects.get(pk=student_id)
                 student.consume_lessons(1)
             except Student.DoesNotExist:
-                logger.warning("Student %s not found for group lesson %s", student_id, instance.id)
+                logger.warning(
+                    "Student %s not found for group lesson %s", student_id, instance.id
+                )
 
         logger.info(
             "Consumed lessons for %d students in group lesson %s",
@@ -75,7 +88,10 @@ def handle_group_lesson_status_change(sender, instance: GroupLesson, created, **
             instance.id,
         )
 
-    elif old_status == LessonStatusEnum.FINISHED and new_status != LessonStatusEnum.FINISHED:
+    elif (
+        old_status == LessonStatusEnum.FINISHED
+        and new_status != LessonStatusEnum.FINISHED
+    ):
         present_student_ids = [
             record["student_id"]
             for record in instance.attendance_list
@@ -87,7 +103,9 @@ def handle_group_lesson_status_change(sender, instance: GroupLesson, created, **
                 student = Student.objects.get(pk=student_id)
                 student.consume_lessons(-1)
             except Student.DoesNotExist:
-                logger.warning("Student %s not found for group lesson %s", student_id, instance.id)
+                logger.warning(
+                    "Student %s not found for group lesson %s", student_id, instance.id
+                )
 
         logger.info(
             "Refunded lessons for %d students in group lesson %s",
