@@ -141,3 +141,12 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
+
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    "consume-lessons-twice-daily": {
+        "task": "schedule.tasks.consume_completed_lessons",
+        "schedule": crontab(hour="9,21"),
+    },
+}
