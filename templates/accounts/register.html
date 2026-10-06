@@ -1,71 +1,30 @@
-{% extends 'base.html' %}
+{% extends 'layouts/auth.html' %}
 
 {% block title %}
-  Register
+  Create account
 {% endblock %}
 
-{% block content %}
-  <form method="post" action="{% url 'user:register' %}">
-    {% csrf_token %}
-    {% if token %}
-      <input type="hidden" name="token" value="{{ token }}">
-    {% endif %}
+{% block card %}
+<form class="form" method="post"
+      action="{% url 'user:register' %}{% if token %}?token={{ token|urlencode }}{% endif %}">
+  {% csrf_token %}
 
-    {% if form.non_field_errors %}
-      <div class="form-error">
-        {{ form.non_field_errors }}
-      </div>
-    {% endif %}
+  <h1 class="form__title">Create account</h1>
+  <p class="auth-card__subtitle">It takes less than a minute</p>
 
-    <label for="name">Name:</label>
-    {% if form.name.errors %}
-      <div class="field-error">{{ form.name.errors }}</div>
-    {% endif %}
-    <input
-      name="name"
-      type="text"
-      id="name"
-      placeholder="Enter your full name"
-      autofocus
-      required
-    >
+  {% include 'accounts/_invite_notice.html' %}
+  {% include 'includes/form_errors.html' %}
 
-    <label for="email">Email:</label>
-    {% if form.email.errors %}
-      <div class="field-error">{{ form.email.errors }}</div>
-    {% endif %}
-    <input
-      name="email"
-      type="email"
-      id="email"
-      placeholder="Enter your email address"
-      required
-    >
+  {% include 'includes/field.html' with field=form.name label="Name" %}
+  {% include 'includes/field.html' with field=form.email label="Email" %}
+  {% include 'includes/field.html' with field=form.password label="Password" %}
+  {% include 'includes/field.html' with field=form.repeat_password label="Repeat password" %}
 
-    <label for="password">Password:</label>
-    {% if form.password.errors %}
-      <div class="field-error">{{ form.password.errors }}</div>
-    {% endif %}
-    <input
-      name="password"
-      type="password"
-      id="password"
-      placeholder="Enter your password"
-      required
-    >
+  <button type="submit" class="btn btn--primary btn--block">Create account</button>
 
-    <label for="repeat_password">Confirm Password:</label>
-    {% if form.repeat_password.errors %}
-      <div class="field-error">{{ form.repeat_password.errors }}</div>
-    {% endif %}
-    <input
-      name="repeat_password"
-      type="password"
-      id="repeat_password"
-      placeholder="Confirm your password"
-      required
-    >
-
-    <input type="submit" value="Register">
-  </form>
+  <p class="auth-card__switch">
+    Already have an account?
+    <a href="{% url 'user:login' %}{% if token %}?token={{ token|urlencode }}{% endif %}">Log in</a>
+  </p>
+</form>
 {% endblock %}

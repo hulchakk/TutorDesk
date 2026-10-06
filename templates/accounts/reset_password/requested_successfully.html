@@ -1,9 +1,10 @@
-{% extends 'base.html' %}
+{% extends 'layouts/auth.html' %}
 
 {% block title %}
-	Reset password
+  Check your email
 {% endblock %}
 
-{% block content %}
-	<h1>If you have an account, you will receive reset link.</h1>
+{% block card %}
+  {% url 'user:login' as login_url %}
+  {% include 'includes/message.html' with tone="info" title="Check your email" text="If an account with this email exists, we've sent a link to reset your password." action_url=login_url action_label="Back to login" %}
 {% endblock %}

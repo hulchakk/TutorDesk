@@ -1,10 +1,10 @@
-{% extends 'base.html' %}
+{% extends 'layouts/auth.html' %}
 
 {% block title %}
-	Reset password
+  Password changed
 {% endblock %}
 
-{% block content %}
-  <h1>Your password has been successfully changed.</h1>
-  <p>You can now <a href="{% url 'user:login' %}">Log in</a>.</p>
+{% block card %}
+  {% url 'user:login' as login_url %}
+  {% include 'includes/message.html' with tone="success" title="Password changed" text="Your password has been updated. Log in with your new password." action_url=login_url action_label="Log in" %}
 {% endblock %}

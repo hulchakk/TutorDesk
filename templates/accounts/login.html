@@ -1,47 +1,29 @@
-{% extends 'base.html' %}
+{% extends 'layouts/auth.html' %}
 
 {% block title %}
-  App - login
+  Log in
 {% endblock %}
 
-{% block content %}
-  <form method="post" action="{% url 'user:login' %}">
-    {% csrf_token %}
-    {% if token %}
-      <input type="hidden" name="token" value="{{ token }}">
-    {% endif %}
+{% block card %}
+<form class="form" method="post"
+      action="{% url 'user:login' %}{% if token %}?token={{ token|urlencode }}{% endif %}">
+  {% csrf_token %}
 
-    {% if form.non_field_errors %}
-      <div class="form-error">
-        {{ form.non_field_errors }}
-      </div>
-    {% endif %}
+  <h1 class="form__title">Welcome back</h1>
+  <p class="auth-card__subtitle">Log in to your account</p>
 
-    <label for="username">Email:</label>
-    {% if form.username.errors %}
-      <div class="field-error">{{ form.username.errors }}</div>
-    {% endif %}
-    <input
-      name="username"
-      type="text"
-      id="username"
-      placeholder="Enter your email address"
-      autofocus
-      required
-    >
+  {% include 'accounts/_invite_notice.html' %}
+  {% include 'includes/form_errors.html' %}
 
-    <label for="password">Password:</label>
-    {% if form.password.errors %}
-      <div class="field-error">{{ form.password.errors }}</div>
-    {% endif %}
-    <input
-      name="password"
-      type="password"
-      id="password"
-      placeholder="Enter your password"
-      required
-    >
-    <a href="{% url 'user:reset-password-request' %}">Forgot password?</a>
-    <input type="submit" value="Login">
-  </form>
+  {% include 'includes/field.html' with field=form.username label="Email" %}
+  {% include 'includes/field.html' with field=form.password label="Password" %}
+  <a class="form__link" href="{% url 'user:reset-password-request' %}">Forgot password?</a>
+
+  <button type="submit" class="btn btn--primary btn--block">Log in</button>
+
+  <p class="auth-card__switch">
+    Don't have an account?
+    <a href="{% url 'user:register' %}{% if token %}?token={{ token|urlencode }}{% endif %}">Create one</a>
+  </p>
+</form>
 {% endblock %}

@@ -1,0 +1,10 @@
+{% comment %}
+  Shown on login / register when the user came from a teacher's invite link.
+  Carries the token through the form POST.
+{% endcomment %}
+{% if token %}
+  <input type="hidden" name="token" value="{{ token }}">
+  <div class="notice" role="status">
+    You've been invited by your teacher. Log in or create an account to get access to your lessons.
+  </div>
+{% endif %}
