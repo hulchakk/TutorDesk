@@ -1,29 +1,63 @@
 {% extends 'base.html' %}
 
 {% block title %}
-  Menu
+  Main menu
 {% endblock %}
 
+{% block topbar %}{% endblock %}
+
+{% block page_class %}page--narrow{% endblock %}
+
 {% block content %}
-  <a href="{% url 'user:logout' %}">Log out</a>
-	{% if user.is_student %}
-    <h1>Student menu</h1>
-    <ul>
-      <li><a href="{% url 'payments:student-profiles' %}">My groups and teacher</a></li>
-    </ul>
-	{% endif %}
-  {% if user.is_teacher %}
-  	<h1>Teacher menu</h1>
-    <ul>
-      <li><a href="{% url 'schedule:students' %}">Students</a></li>
-      <li><a href="{% url 'schedule:groups' %}">Groups</a></li>
-      <li><a href="{% url 'schedule:teacher-schedule' %}">Schedule</a></li>
-    </ul>
-  {% endif %}
-  {% if user.is_staff %}
-  	<h1>Staff menu</h1>
-  {% endif %}
-  {% if user.is_superuser %}
-  	<h1>Admin menu</h1>
-  {% endif %}
+<header class="menu-header">
+  <h1 class="menu-header__title">Main menu</h1>
+  <div class="menu-header__actions">
+    <a href="{% url 'user:change-password' %}" class="link-muted">Change password</a>
+    <a href="{% url 'user:logout' %}" class="link-muted">Log out →</a>
+  </div>
+</header>
+
+{% if user.is_student %}
+<section class="menu-section">
+  <h2 class="section-label">Student</h2>
+  <div class="menu-grid">
+    <a href="{% url 'payments:student-profiles' %}" class="menu-card">
+      <span class="menu-card__name">My groups and teachers</span>
+      <span class="menu-card__meta">Lesson balance and top-ups</span>
+    </a>
+  </div>
+</section>
+{% endif %}
+
+{% if user.is_teacher %}
+<section class="menu-section">
+  <h2 class="section-label">Teacher</h2>
+  <div class="menu-grid">
+    <a href="{% url 'schedule:teacher-schedule' %}" class="menu-card">
+      <span class="menu-card__name">Schedule</span>
+      <span class="menu-card__meta">View and edit your weekly schedule</span>
+    </a>
+    <a href="{% url 'schedule:students' %}" class="menu-card">
+      <span class="menu-card__name">Students</span>
+      <span class="menu-card__meta">Add and manage your students</span>
+    </a>
+    <a href="{% url 'schedule:groups' %}" class="menu-card">
+      <span class="menu-card__name">Groups</span>
+      <span class="menu-card__meta">Group lineups and lessons</span>
+    </a>
+  </div>
+</section>
+{% endif %}
+
+{% if user.is_staff or user.is_superuser %}
+<section class="menu-section">
+  <h2 class="section-label">Management</h2>
+  <div class="menu-grid">
+    <a href="{% url 'admin:index' %}" class="menu-card">
+      <span class="menu-card__name">Admin panel</span>
+      <span class="menu-card__meta">Django admin panel</span>
+    </a>
+  </div>
+</section>
+{% endif %}
 {% endblock %}
