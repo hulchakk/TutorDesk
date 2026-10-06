@@ -24,6 +24,13 @@ from user.decorators import teacher_required
 from user.mixins import TeacherRequiredMixin
 
 
+class StudentFormMixin(HTMXFormMixin):
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["teacher"] = self.request.user
+        return kwargs
+
+
 class StudentsView(TeacherRequiredMixin, ListView):
     model = Student
     template_name = "schedule/students.html"
@@ -37,7 +44,7 @@ class StudentsView(TeacherRequiredMixin, ListView):
         )
 
 
-class StudentCreateView(TeacherRequiredMixin, HTMXFormMixin, CreateView):
+class StudentCreateView(TeacherRequiredMixin, StudentFormMixin, CreateView):
     model = Student
     form_class = StudentForm
     template_name = "schedule/forms/student_create_form.html"
@@ -49,7 +56,7 @@ class StudentCreateView(TeacherRequiredMixin, HTMXFormMixin, CreateView):
         return super().form_valid(form)
 
 
-class StudentUpdateView(TeacherRequiredMixin, HTMXFormMixin, UpdateView):
+class StudentUpdateView(TeacherRequiredMixin, StudentFormMixin, UpdateView):
     model = Student
     form_class = StudentForm
     template_name = "schedule/forms/student_update_form.html"
@@ -168,7 +175,7 @@ class GroupStudentsView(TeacherRequiredMixin, DetailView):
         return queryset
 
 
-class GroupStudentCreateView(TeacherRequiredMixin, HTMXFormMixin, CreateView):
+class GroupStudentCreateView(TeacherRequiredMixin, StudentFormMixin, CreateView):
     model = Student
     form_class = StudentForm
     template_name = "schedule/forms/group_student_create_form.html"
