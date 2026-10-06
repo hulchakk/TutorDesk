@@ -11,11 +11,17 @@ class StudentForm(forms.ModelForm):
     available_tariffs = forms.ModelMultipleChoiceField(
         queryset=TariffPlan.objects.none(),
         required=False,
+        widget=forms.CheckboxSelectMultiple,
     )
 
     class Meta:
         model = Student
         fields = ["name", "available_tariffs"]
+        widgets = {
+            "name": forms.TextInput(
+                attrs={"placeholder": "Student name", "autocomplete": "off"}
+            )
+        }
 
     def __init__(self, *args, teacher=None, **kwargs):
         super(StudentForm, self).__init__(*args, **kwargs)
@@ -83,10 +89,12 @@ class LessonForm(forms.ModelForm):
         fields = ["start_datetime", "duration", "student", "status"]
         widgets = {
             "start_datetime": forms.DateTimeInput(
+                # datetime-local inputs only accept the "T"-separated ISO format
+                format="%Y-%m-%dT%H:%M",
                 attrs={
                     "type": "datetime-local",
                     "class": "form-control",
-                }
+                },
             ),
             "student": forms.Select(
                 attrs={
@@ -121,6 +129,7 @@ class LessonForm(forms.ModelForm):
                 )
 
             self.fields["student"].queryset = queryset
+            self.fields["student"].empty_label = "Select a student"
 
     def clean_duration(self):
         duration = self.cleaned_data.get("duration", 0)
@@ -137,10 +146,12 @@ class GroupLessonForm(LessonForm):
         fields = ["start_datetime", "duration", "group", "status"]
         widgets = {
             "start_datetime": forms.DateTimeInput(
+                # datetime-local inputs only accept the "T"-separated ISO format
+                format="%Y-%m-%dT%H:%M",
                 attrs={
                     "type": "datetime-local",
                     "class": "form-control",
-                }
+                },
             ),
             "group": forms.Select(
                 attrs={
@@ -166,3 +177,4 @@ class GroupLessonForm(LessonForm):
                 )
 
             self.fields["group"].queryset = queryset
+            self.fields["group"].empty_label = "Select a group"
