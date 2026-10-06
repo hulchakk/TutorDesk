@@ -10,16 +10,26 @@ class RegisterForm(forms.ModelForm):
     name = forms.CharField(
         max_length=255,
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "Full Name"}),
+        widget=forms.TextInput(
+            attrs={"placeholder": "Full name", "autocomplete": "name"}
+        ),
     )
     email = forms.EmailField(
-        required=True, widget=forms.EmailInput(attrs={"placeholder": "Email"})
+        required=True,
+        widget=forms.EmailInput(
+            attrs={"placeholder": "you@example.com", "autocomplete": "email"}
+        ),
     )
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"placeholder": "Password"}), required=True
+        widget=forms.PasswordInput(
+            attrs={"placeholder": "Password", "autocomplete": "new-password"}
+        ),
+        required=True,
     )
     repeat_password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"placeholder": "Confirm Password"}),
+        widget=forms.PasswordInput(
+            attrs={"placeholder": "Repeat password", "autocomplete": "new-password"}
+        ),
         required=True,
     )
 
@@ -53,10 +63,14 @@ class RegisterForm(forms.ModelForm):
 
 class ResetPasswordForm(forms.Form):
     new_password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"placeholder": "New Password"}),
+        widget=forms.PasswordInput(
+            attrs={"placeholder": "New password", "autocomplete": "new-password"}
+        ),
     )
     repeat_new_password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"placeholder": "Repeat New Password"}),
+        widget=forms.PasswordInput(
+            attrs={"placeholder": "Repeat new password", "autocomplete": "new-password"}
+        ),
     )
 
     def __init__(self, *args, **kwargs):
@@ -90,12 +104,13 @@ class ResetPasswordForm(forms.Form):
 
 class ChangePasswordForm(ResetPasswordForm):
     old_password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"placeholder": "Old Password"}),
+        widget=forms.PasswordInput(
+            attrs={
+                "placeholder": "Current password",
+                "autocomplete": "current-password",
+            }
+        ),
     )
-
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop("user", None)
-        super().__init__(*args, **kwargs)
 
     def clean_old_password(self):
         old_password = self.cleaned_data.get("old_password")
