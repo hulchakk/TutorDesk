@@ -223,17 +223,29 @@ def reset_password_request_view(request) -> HttpResponse:
         if reset_password_token:
             if reset_password_token.is_expired:
                 reset_password_token.delete()
-                reset_password_token = None
             else:
                 return render(
                     request,
                     template_name="accounts/reset_password/already_requested.html",
                 )
 
-        if not reset_password_token:
-            reset_password_token = ResetPasswordToken.objects.create(user=user)
+        reset_link_base = request.build_absolute_uri(
+            reverse("user:reset-password-complete")
+        )
 
-        # TODO: send reset_password url via email
+        try:
+            with transaction.atomic():
+                reset_password_token = ResetPasswordToken.objects.create(user=user)
+                EmailNotificationsService().send_password_reset_email(
+                    user.email,
+                    user.name,
+                    f"{reset_link_base}?token={reset_password_token.id}",
+                )
+        except NotificationError:
+            messages.error(
+                request, "We couldn't send the reset link. Please try again later."
+            )
+            return render(request, "accounts/reset_password/request.html")
 
         return render(
             request,
