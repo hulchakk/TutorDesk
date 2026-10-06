@@ -11,6 +11,7 @@ dependencies = [
     "django-debug-toolbar>=8.0.0",
     "django-htmx>=1.29.0",
     "httpx>=0.28.1",
+    "psycopg>=3.1.0",
     "python-dotenv>=1.2.3",
     "redis>=5.0.0",
     "whitenoise>=6.6.0",

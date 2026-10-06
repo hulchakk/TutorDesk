@@ -40,8 +40,6 @@ services:
       - .:/app
     ports:
       - "8000:8000"
-    environment:
-      - DJANGO_SETTINGS_MODULE=tutor_app.settings.dev
     env_file:
       - .env
     depends_on:
