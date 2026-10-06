@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta, time
 
 from django.contrib import messages
-from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Count, Q, Prefetch
 from django.http import HttpResponse, HttpRequest
 from django.shortcuts import redirect, get_object_or_404
@@ -21,9 +20,11 @@ from schedule.forms import StudentForm, GroupForm, LessonForm, GroupLessonForm
 from schedule.mixins import HTMXFormMixin
 from schedule.models import Student, Group, Lesson, GroupLesson
 from schedule.utils import get_week_str
+from user.decorators import teacher_required
+from user.mixins import TeacherRequiredMixin
 
 
-class StudentsView(ListView):
+class StudentsView(TeacherRequiredMixin, ListView):
     model = Student
     template_name = "schedule/students.html"
     context_object_name = "students"
@@ -36,7 +37,7 @@ class StudentsView(ListView):
         )
 
 
-class StudentCreateView(HTMXFormMixin, CreateView):
+class StudentCreateView(TeacherRequiredMixin, HTMXFormMixin, CreateView):
     model = Student
     form_class = StudentForm
     template_name = "schedule/forms/student_create_form.html"
@@ -48,7 +49,7 @@ class StudentCreateView(HTMXFormMixin, CreateView):
         return super().form_valid(form)
 
 
-class StudentUpdateView(HTMXFormMixin, UpdateView):
+class StudentUpdateView(TeacherRequiredMixin, HTMXFormMixin, UpdateView):
     model = Student
     form_class = StudentForm
     template_name = "schedule/forms/student_update_form.html"
@@ -73,6 +74,7 @@ class StudentUpdateView(HTMXFormMixin, UpdateView):
         return reverse("schedule:students")
 
 
+@teacher_required
 @require_POST
 @htmx_redirect_response
 def delete_student_view(request: HttpRequest, pk: int) -> HttpResponse:
@@ -91,7 +93,7 @@ def delete_student_view(request: HttpRequest, pk: int) -> HttpResponse:
     return redirect("schedule:students")
 
 
-class GroupsView(ListView):
+class GroupsView(TeacherRequiredMixin, ListView):
     model = Group
     template_name = "schedule/groups.html"
     context_object_name = "groups"
@@ -107,7 +109,7 @@ class GroupsView(ListView):
         return queryset.order_by("name")
 
 
-class GroupCreateView(HTMXFormMixin, CreateView):
+class GroupCreateView(TeacherRequiredMixin, HTMXFormMixin, CreateView):
     model = Group
     form_class = GroupForm
     template_name = "schedule/forms/group_create_form.html"
@@ -119,7 +121,7 @@ class GroupCreateView(HTMXFormMixin, CreateView):
         return super().form_valid(form)
 
 
-class GroupUpdateView(HTMXFormMixin, UpdateView):
+class GroupUpdateView(TeacherRequiredMixin, HTMXFormMixin, UpdateView):
     model = Group
     form_class = GroupForm
     template_name = "schedule/forms/group_update_form.html"
@@ -132,6 +134,7 @@ class GroupUpdateView(HTMXFormMixin, UpdateView):
         return queryset.filter(teacher=self.request.user)
 
 
+@teacher_required
 @require_POST
 @htmx_redirect_response
 def delete_group_view(request: HttpRequest, pk: int) -> HttpResponse:
@@ -143,7 +146,7 @@ def delete_group_view(request: HttpRequest, pk: int) -> HttpResponse:
     return redirect("schedule:groups")
 
 
-class GroupStudentsView(DetailView):
+class GroupStudentsView(TeacherRequiredMixin, DetailView):
     model = Group
     template_name = "schedule/group_students.html"
     context_object_name = "group"
@@ -165,7 +168,7 @@ class GroupStudentsView(DetailView):
         return queryset
 
 
-class GroupStudentCreateView(HTMXFormMixin, CreateView):
+class GroupStudentCreateView(TeacherRequiredMixin, HTMXFormMixin, CreateView):
     model = Student
     form_class = StudentForm
     template_name = "schedule/forms/group_student_create_form.html"
@@ -212,7 +215,7 @@ class LessonFormMixin(HTMXFormMixin):
         return schedule_week_url(self.object.start_datetime)
 
 
-class LessonCreateView(LessonFormMixin, CreateView):
+class LessonCreateView(TeacherRequiredMixin, LessonFormMixin, CreateView):
     model = Lesson
     form_class = LessonForm
     template_name = "schedule/forms/lesson_create_form.html"
@@ -224,7 +227,7 @@ class LessonCreateView(LessonFormMixin, CreateView):
         return kwargs
 
 
-class LessonUpdateView(LessonFormMixin, UpdateView):
+class LessonUpdateView(TeacherRequiredMixin, LessonFormMixin, UpdateView):
     model = Lesson
     form_class = LessonForm
     template_name = "schedule/forms/lesson_update_form.html"
@@ -232,6 +235,7 @@ class LessonUpdateView(LessonFormMixin, UpdateView):
     success_message = "Lesson updated"
 
 
+@teacher_required
 @require_POST
 @htmx_redirect_response
 def delete_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
@@ -245,14 +249,14 @@ def delete_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
     return redirect(schedule_week_url(lesson.start_datetime))
 
 
-class GroupLessonCreateView(LessonFormMixin, CreateView):
+class GroupLessonCreateView(TeacherRequiredMixin, LessonFormMixin, CreateView):
     model = GroupLesson
     form_class = GroupLessonForm
     template_name = "schedule/forms/group_lesson_create_form.html"
     success_message = "Group lesson added"
 
 
-class GroupLessonUpdateView(LessonFormMixin, UpdateView):
+class GroupLessonUpdateView(TeacherRequiredMixin, LessonFormMixin, UpdateView):
     model = GroupLesson
     form_class = GroupLessonForm
     template_name = "schedule/forms/group_lesson_update_form.html"
@@ -260,6 +264,7 @@ class GroupLessonUpdateView(LessonFormMixin, UpdateView):
     success_message = "Group lesson updated"
 
 
+@teacher_required
 @require_POST
 @htmx_redirect_response
 def delete_group_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
@@ -273,7 +278,7 @@ def delete_group_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
     return redirect(schedule_week_url(lesson.start_datetime))
 
 
-class TeacherScheduleView(UserPassesTestMixin, TemplateView):
+class TeacherScheduleView(TeacherRequiredMixin, TemplateView):
     template_name = "schedule/teacher_schedule.html"
 
     # Free slots ("windows") are shown inside working hours only.
@@ -319,9 +324,6 @@ class TeacherScheduleView(UserPassesTestMixin, TemplateView):
 
         add_gap(cursor, day_end)
         return timeline
-
-    def test_func(self):
-        return self.request.user.is_teacher
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
