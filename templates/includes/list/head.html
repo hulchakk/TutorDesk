@@ -1,0 +1,24 @@
+{% comment %}
+  Header of a [data-list] card.
+  Usage: {% include 'includes/list/head.html' with title="All students" total=students|length noun="students" search_placeholder="Search students" %}
+  Optional: breadcrumb_url, breadcrumb_label.
+{% endcomment %}
+<header class="list-card__head">
+  <div>
+    {% if breadcrumb_url %}
+      <nav class="breadcrumbs" aria-label="Breadcrumbs">
+        <a href="{{ breadcrumb_url }}">{{ breadcrumb_label }}</a>
+        <span aria-hidden="true">/</span>
+      </nav>
+    {% endif %}
+    <h1 class="list-card__title">{{ title }}</h1>
+    <p class="list-card__subtitle"><span data-list-count>{{ total }}</span> {{ noun }}</p>
+  </div>
+  {% if total %}
+  <label class="search">
+    <span class="sr-only">{{ search_placeholder }}</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input type="search" placeholder="{{ search_placeholder }}…" autocomplete="off" data-list-search>
+  </label>
+  {% endif %}
+</header>
