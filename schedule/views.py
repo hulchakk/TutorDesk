@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, time
 
+from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Count, Q, Prefetch
 from django.http import HttpResponse, HttpRequest
@@ -28,11 +29,11 @@ class StudentsView(ListView):
     context_object_name = "students"
 
     def get_queryset(self):
-        queryset = Student.active_objects
-
-        queryset = queryset.filter(teacher=self.request.user)
-
-        return queryset
+        return (
+            Student.active_objects.filter(teacher=self.request.user)
+            .prefetch_related("available_tariffs")
+            .order_by("name")
+        )
 
 
 class StudentCreateView(HTMXFormMixin, CreateView):
@@ -40,6 +41,7 @@ class StudentCreateView(HTMXFormMixin, CreateView):
     form_class = StudentForm
     template_name = "schedule/forms/student_create_form.html"
     success_url = reverse_lazy("schedule:students")
+    success_message = "Student %(name)s added"
 
     def form_valid(self, form):
         form.instance.teacher = self.request.user
@@ -51,6 +53,7 @@ class StudentUpdateView(HTMXFormMixin, UpdateView):
     form_class = StudentForm
     template_name = "schedule/forms/student_update_form.html"
     context_object_name = "student"
+    success_message = "Student %(name)s updated"
 
     def get_queryset(self):
         queryset = Student.active_objects
@@ -80,6 +83,7 @@ def delete_student_view(request: HttpRequest, pk: int) -> HttpResponse:
     )
     student.is_active = False
     student.save()
+    messages.success(request, f"Student {student.name} deleted")
 
     if student.group:
         return redirect("schedule:group-students", pk=student.group.pk)
@@ -100,7 +104,7 @@ class GroupsView(ListView):
             active_students_count=Count("students", filter=Q(students__is_active=True))
         )
 
-        return queryset
+        return queryset.order_by("name")
 
 
 class GroupCreateView(HTMXFormMixin, CreateView):
@@ -108,6 +112,7 @@ class GroupCreateView(HTMXFormMixin, CreateView):
     form_class = GroupForm
     template_name = "schedule/forms/group_create_form.html"
     success_url = reverse_lazy("schedule:groups")
+    success_message = "Group %(name)s created"
 
     def form_valid(self, form):
         form.instance.teacher = self.request.user
@@ -120,6 +125,7 @@ class GroupUpdateView(HTMXFormMixin, UpdateView):
     template_name = "schedule/forms/group_update_form.html"
     context_object_name = "group"
     success_url = reverse_lazy("schedule:groups")
+    success_message = "Group %(name)s updated"
 
     def get_queryset(self):
         queryset = Group.active_objects
@@ -132,6 +138,7 @@ def delete_group_view(request: HttpRequest, pk: int) -> HttpResponse:
     group = get_object_or_404(Group.active_objects, pk=pk, teacher=request.user)
     group.is_active = False
     group.save()
+    messages.success(request, f"Group {group.name} deleted")
 
     return redirect("schedule:groups")
 
@@ -147,7 +154,12 @@ class GroupStudentsView(DetailView):
         queryset = queryset.filter(teacher=self.request.user)
 
         queryset = queryset.prefetch_related(
-            Prefetch("students", queryset=Student.active_objects.all())
+            Prefetch(
+                "students",
+                queryset=Student.active_objects.prefetch_related(
+                    "available_tariffs"
+                ).order_by("name"),
+            )
         )
 
         return queryset
@@ -157,6 +169,7 @@ class GroupStudentCreateView(HTMXFormMixin, CreateView):
     model = Student
     form_class = StudentForm
     template_name = "schedule/forms/group_student_create_form.html"
+    success_message = "%(name)s added to the group"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -176,11 +189,34 @@ class GroupStudentCreateView(HTMXFormMixin, CreateView):
         return reverse("schedule:group-students", kwargs={"pk": self.kwargs["pk"]})
 
 
-class LessonCreateView(HTMXFormMixin, CreateView):
+def schedule_week_url(dt) -> str:
+    return f"{reverse('schedule:teacher-schedule')}?week={get_week_str(dt)}"
+
+
+class LessonFormMixin(HTMXFormMixin):
+    """Shared behaviour of lesson create/update views."""
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def get_initial(self):
+        initial = super().get_initial()
+        # Clicking a free slot in the schedule opens the form with ?start=YYYY-MM-DDTHH:MM
+        if start := self.request.GET.get("start"):
+            initial["start_datetime"] = start
+        return initial
+
+    def get_success_url(self):
+        return schedule_week_url(self.object.start_datetime)
+
+
+class LessonCreateView(LessonFormMixin, CreateView):
     model = Lesson
     form_class = LessonForm
     template_name = "schedule/forms/lesson_create_form.html"
-    success_url = reverse_lazy("schedule:teacher-schedule")
+    success_message = "Lesson added"
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -188,19 +224,12 @@ class LessonCreateView(HTMXFormMixin, CreateView):
         return kwargs
 
 
-class LessonUpdateView(HTMXFormMixin, UpdateView):
+class LessonUpdateView(LessonFormMixin, UpdateView):
     model = Lesson
     form_class = LessonForm
     template_name = "schedule/forms/lesson_update_form.html"
     context_object_name = "lesson"
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["user"] = self.request.user
-        return kwargs
-
-    def get_success_url(self):
-        return f"{reverse('schedule:teacher-schedule')}?week={get_week_str(self.object.start_datetime)}"
+    success_message = "Lesson updated"
 
 
 @require_POST
@@ -212,34 +241,23 @@ def delete_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
         student__teacher=request.user,
     )
     lesson.delete()
-    return redirect("schedule:teacher-schedule")
+    messages.success(request, "Lesson deleted")
+    return redirect(schedule_week_url(lesson.start_datetime))
 
 
-class GroupLessonCreateView(HTMXFormMixin, CreateView):
-    model = Lesson
+class GroupLessonCreateView(LessonFormMixin, CreateView):
+    model = GroupLesson
     form_class = GroupLessonForm
     template_name = "schedule/forms/group_lesson_create_form.html"
-    success_url = reverse_lazy("schedule:teacher-schedule")
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["user"] = self.request.user
-        return kwargs
+    success_message = "Group lesson added"
 
 
-class GroupLessonUpdateView(HTMXFormMixin, UpdateView):
+class GroupLessonUpdateView(LessonFormMixin, UpdateView):
     model = GroupLesson
     form_class = GroupLessonForm
     template_name = "schedule/forms/group_lesson_update_form.html"
     context_object_name = "lesson"
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["user"] = self.request.user
-        return kwargs
-
-    def get_success_url(self):
-        return f"{reverse('schedule:teacher-schedule')}?week={get_week_str(self.object.start_datetime)}"
+    success_message = "Group lesson updated"
 
 
 @require_POST
@@ -251,11 +269,56 @@ def delete_group_lesson_view(request: HttpRequest, pk: int) -> HttpResponse:
         group__teacher=request.user,
     )
     lesson.delete()
-    return redirect("schedule:teacher-schedule")
+    messages.success(request, "Lesson deleted")
+    return redirect(schedule_week_url(lesson.start_datetime))
 
 
 class TeacherScheduleView(UserPassesTestMixin, TemplateView):
     template_name = "schedule/teacher_schedule.html"
+
+    # Free slots ("windows") are shown inside working hours only.
+    work_day_start = time(9)
+    work_day_end = time(21)
+    min_gap = timedelta(minutes=15)
+
+    def _build_timeline(self, day_date, day_lessons) -> list[dict]:
+        cursor = timezone.make_aware(datetime.combine(day_date, self.work_day_start))
+        day_end = timezone.make_aware(datetime.combine(day_date, self.work_day_end))
+        timeline = []
+
+        def add_gap(start, end):
+            if end - start >= self.min_gap:
+                timeline.append(
+                    {
+                        "type": "GAP",
+                        "start_datetime": start,
+                        "end_datetime": end,
+                        "start_param": timezone.localtime(start).strftime(
+                            "%Y-%m-%dT%H:%M"
+                        ),
+                    }
+                )
+
+        for lesson in day_lessons:
+            add_gap(cursor, lesson.start_datetime)
+            # max() keeps overlapping lessons from moving the cursor backwards
+            cursor = max(cursor, lesson.start_datetime + lesson.duration)
+
+            is_individual = hasattr(lesson, "student")
+            timeline.append(
+                {
+                    "type": "INDIVIDUAL" if is_individual else "GROUP",
+                    "id": lesson.id,
+                    "start_datetime": lesson.start_datetime,
+                    "duration": int(lesson.duration.total_seconds() // 60),
+                    "status": lesson.status,
+                    "status_display": lesson.get_status_display(),
+                    "name": lesson.student.name if is_individual else lesson.group.name,
+                }
+            )
+
+        add_gap(cursor, day_end)
+        return timeline
 
     def test_func(self):
         return self.request.user.is_teacher
@@ -291,66 +354,24 @@ class TeacherScheduleView(UserPassesTestMixin, TemplateView):
             start_datetime__lt=end_of_week,
         )
 
-        days = [
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday",
-            "Sunday",
-        ]
-
+        today = timezone.localdate()
         schedule = []
 
         for day_id in range(7):
-            timeline = []
-            day_date = start_of_week + timedelta(days=day_id)
-            cursor = day_date
+            day_date = (start_of_week + timedelta(days=day_id)).date()
 
             day_lessons = [
                 lesson
-                for lesson in lessons
-                if lesson.start_datetime.weekday() == day_id
-            ] + [
-                lesson
-                for lesson in group_lessons
-                if lesson.start_datetime.weekday() == day_id
+                for lesson in [*lessons, *group_lessons]
+                if timezone.localtime(lesson.start_datetime).date() == day_date
             ]
-
             day_lessons.sort(key=lambda x: x.start_datetime)
-
-            for lesson in day_lessons:
-                if cursor < lesson.start_datetime:
-                    timeline.append(
-                        {
-                            "type": "GAP",
-                            "start_datetime": cursor,
-                            "end_datetime": lesson.start_datetime,
-                        }
-                    )
-                cursor = lesson.start_datetime + lesson.duration
-
-                is_individual = hasattr(lesson, "student")
-
-                timeline.append(
-                    {
-                        "type": "INDIVIDUAL" if is_individual else "GROUP",
-                        "id": lesson.id,
-                        "start_datetime": lesson.start_datetime,
-                        "duration": int(lesson.duration.total_seconds() // 60),
-                        "status": lesson.status,
-                        "name": (
-                            lesson.student.name if is_individual else lesson.group.name
-                        ),
-                    }
-                )
 
             schedule.append(
                 {
-                    "name": days[day_id],
-                    "date": day_date.date(),
-                    "timeline": timeline,
+                    "date": day_date,
+                    "is_today": day_date == today,
+                    "timeline": self._build_timeline(day_date, day_lessons),
                 }
             )
 
@@ -363,5 +384,6 @@ class TeacherScheduleView(UserPassesTestMixin, TemplateView):
         context["next_week_str"] = next_week.date().strftime("%G-W%V")
         context["start_of_week"] = start_of_week.date()
         context["end_of_week"] = end_of_week.date() - timedelta(days=1)
+        context["is_current_week"] = start_of_week.date() <= today < end_of_week.date()
 
         return context
