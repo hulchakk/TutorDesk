@@ -59,6 +59,31 @@ class MonobankService(IPaymentsService):
         except httpx.RequestError:
             raise PaymentError("Something went wrong while creating payment.")
 
+    def send_receipt(
+        self,
+        order_id: str,
+        email: str,
+        amount: int,
+        order_details: dict,
+    ) -> None:
+        try:
+            response = httpx.post(
+                API_SEND_RECEIPT_URL,
+                headers=HEADERS,
+                json={
+                    "order_id": order_id,
+                    "customer_email": email,
+                    "amount": amount,
+                    "details": order_details,
+                },
+            )
+            if response.status_code not in (200, 201):
+                logging.error("Failed to send receipt: %s", response.json())
+                raise PaymentError("Failed to send receipt")
+        except httpx.RequestError as e:
+            logging.error("Error sending receipt: %s", e)
+            raise PaymentError("Error sending receipt") from e
+
 
 def send_receipt(
     invoice_id: str,
