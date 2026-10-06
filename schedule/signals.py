@@ -1,114 +1,44 @@
-import logging
-
-from django.db.models.signals import post_save
+from django.db import transaction
+from django.db.models import QuerySet
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
-from schedule.models import Lesson, GroupLesson, LessonStatusEnum, Student
+from schedule.models import GroupLesson, Lesson
+from schedule.services import apply_lesson_charges
 
-logger = logging.getLogger(__name__)
+
+@receiver(pre_save, sender=Lesson)
+@receiver(pre_save, sender=GroupLesson)
+def remember_charged_students(sender, instance, raw=False, **kwargs):
+    previous = None
+
+    if instance.pk and not raw:
+        previous = sender.objects.filter(pk=instance.pk).first()
+
+    instance._charged_before = previous.charged_student_ids() if previous else set()
 
 
 @receiver(post_save, sender=Lesson)
-def handle_lesson_status_change(sender, instance: Lesson, created, **kwargs):
-    if created:
-        return
-
-    previous_instance = Lesson.objects.filter(pk=instance.pk).values("status").first()
-    if not previous_instance:
-        return
-
-    old_status = previous_instance["status"]
-    new_status = instance.status
-
-    if old_status == new_status:
-        return
-
-    if (
-        new_status == LessonStatusEnum.FINISHED
-        and old_status != LessonStatusEnum.CANCELED
-    ):
-        instance.student.consume_lessons(1)
-        logger.info(
-            "Consumed 1 lesson for student %s (individual lesson %s)",
-            instance.student.id,
-            instance.id,
-        )
-
-    elif (
-        old_status == LessonStatusEnum.FINISHED
-        and new_status != LessonStatusEnum.FINISHED
-    ):
-        instance.student.consume_lessons(-1)
-        logger.info(
-            "Refunded 1 lesson for student %s (individual lesson %s)",
-            instance.student.id,
-            instance.id,
-        )
-
-
 @receiver(post_save, sender=GroupLesson)
-def handle_group_lesson_status_change(sender, instance: GroupLesson, created, **kwargs):
-    if created:
+def sync_charges_on_save(sender, instance, raw=False, **kwargs):
+    if raw:
         return
 
-    previous_instance = (
-        GroupLesson.objects.filter(pk=instance.pk).values("status").first()
-    )
-    if not previous_instance:
-        return
-
-    old_status = previous_instance["status"]
-    new_status = instance.status
-
-    if old_status == new_status:
-        return
-
-    if (
-        new_status == LessonStatusEnum.FINISHED
-        and old_status != LessonStatusEnum.CANCELED
-    ):
-        present_student_ids = [
-            record["student_id"]
-            for record in instance.attendance_list
-            if record.get("status") == "present"
-        ]
-
-        for student_id in present_student_ids:
-            try:
-                student = Student.objects.get(pk=student_id)
-                student.consume_lessons(1)
-            except Student.DoesNotExist:
-                logger.warning(
-                    "Student %s not found for group lesson %s", student_id, instance.id
-                )
-
-        logger.info(
-            "Consumed lessons for %d students in group lesson %s",
-            len(present_student_ids),
-            instance.id,
+    with transaction.atomic():
+        apply_lesson_charges(
+            getattr(instance, "_charged_before", set()),
+            instance.charged_student_ids(),
         )
 
-    elif (
-        old_status == LessonStatusEnum.FINISHED
-        and new_status != LessonStatusEnum.FINISHED
-    ):
-        present_student_ids = [
-            record["student_id"]
-            for record in instance.attendance_list
-            if record.get("status") == "present"
-        ]
 
-        for student_id in present_student_ids:
-            try:
-                student = Student.objects.get(pk=student_id)
-                student.consume_lessons(-1)
-            except Student.DoesNotExist:
-                logger.warning(
-                    "Student %s not found for group lesson %s", student_id, instance.id
-                )
+@receiver(post_delete, sender=Lesson)
+@receiver(post_delete, sender=GroupLesson)
+def refund_charges_on_delete(sender, instance, origin=None, **kwargs):
+    if isinstance(origin, QuerySet):
+        if origin.model is not sender:
+            return
+    elif origin is not None and origin is not instance:
+        return
 
-        logger.info(
-            "Refunded lessons for %d students in group lesson %s",
-            len(present_student_ids),
-            instance.id,
-        )
+    with transaction.atomic():
+        apply_lesson_charges(instance.charged_student_ids(), set())
