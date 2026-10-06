@@ -1,46 +1,22 @@
-<form hx-post="{% url 'schedule:lesson-create' %}"
+<form class="form"
+      hx-post="{% url 'schedule:lesson-create' %}"
       hx-target="this"
-      hx-swap="outerHTML">
+      hx-swap="outerHTML"
+      hx-disabled-elt="#form-container button[type=submit]">
 
-<h1>Create lesson</h1>
+  <div class="segmented" role="tablist" aria-label="Lesson type">
+    <button type="button" class="segmented__item is-active" role="tab" aria-selected="true">Individual</button>
+    <button type="button" class="segmented__item" role="tab" aria-selected="false"
+            hx-get="{% url 'schedule:group-lesson-create' %}{% if request.GET.start %}?start={{ request.GET.start|urlencode }}{% endif %}"
+            hx-target="#form-container"
+            hx-swap="innerHTML">Group</button>
+  </div>
 
-  {% if form.non_field_errors %}
-    <div class="form-error">
-      {{ form.non_field_errors }}
-    </div>
-  {% endif %}
+  <h2 class="form__title">New lesson</h2>
 
-  <label>
-    Start date and time:
-    {{ form.start_datetime }}
-    {% if form.start_datetime.errors %}
-      <span class="field-error">{{ form.start_datetime.errors }}</span>
-    {% endif %}
-  </label>
+  {% include 'schedule/forms/_lesson_fields.html' with party_field=form.student party_label="Student" %}
 
-  <label>
-    Duration (minutes):
-    {{ form.duration }}
-    {% if form.duration.errors %}
-      <span class="field-error">{{ form.duration.errors }}</span>
-    {% endif %}
-  </label>
-
-  <label>
-    Student:
-    {{ form.student }}
-    {% if form.student.errors %}
-      <span class="field-error">{{ form.student.errors }}</span>
-    {% endif %}
-  </label>
-
-  <label>
-    Status:
-    {{ form.status }}
-    {% if form.status.errors %}
-      <span class="field-error">{{ form.status.errors }}</span>
-    {% endif %}
-  </label>
-
-  <button type="submit">Create lesson</button>
+  <div class="form__actions">
+    <button type="submit" class="btn btn--primary btn--block">Add to schedule</button>
+  </div>
 </form>

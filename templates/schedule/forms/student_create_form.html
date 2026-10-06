@@ -1,30 +1,14 @@
-<form hx-post="{% url 'schedule:student-create' %}"
+<form class="form"
+      hx-post="{% url 'schedule:student-create' %}"
       hx-target="this"
-      hx-swap="outerHTML">
+      hx-swap="outerHTML"
+      hx-disabled-elt="#form-container button[type=submit]">
 
-  <h1>Create student</h1>
+  <h2 class="form__title">New student</h2>
 
-  {% if form.non_field_errors %}
-    <div class="form-error">
-      {{ form.non_field_errors }}
-    </div>
-  {% endif %}
+  {% include 'schedule/forms/_student_fields.html' %}
 
-  <label>
-    Student name:
-    {{ form.name }}
-    {% if form.name.errors %}
-      <span class="field-error">{{ form.name.errors }}</span>
-    {% endif %}
-  </label>
-
-  <label>
-    Available Tariffs:
-    {{ form.available_tariffs }}
-    {% if form.available_tariffs.errors %}
-      <span class="field-error">{{ form.available_tariffs.errors }}</span>
-    {% endif %}
-  </label>
-
-  <button type="submit">Create</button>
+  <div class="form__actions">
+    <button type="submit" class="btn btn--primary btn--block">Add student</button>
+  </div>
 </form>

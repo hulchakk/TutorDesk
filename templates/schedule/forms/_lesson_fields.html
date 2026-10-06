@@ -1,0 +1,24 @@
+{% comment %}
+  Fields shared by individual and group lesson forms.
+  Expects: form, party_field (form.student / form.group), party_label.
+{% endcomment %}
+{% include 'includes/form_errors.html' %}
+
+{% include 'includes/field.html' with field=party_field label=party_label %}
+{% include 'includes/field.html' with field=form.start_datetime label="Date and time" %}
+
+<div class="field{% if form.duration.errors %} field--error{% endif %}">
+  <label class="field__label" for="{{ form.duration.id_for_label }}">Duration (min)</label>
+  {{ form.duration }}
+  <div class="chips" aria-label="Quick duration">
+    <button type="button" class="chip" data-fill="duration" data-value="30">30</button>
+    <button type="button" class="chip" data-fill="duration" data-value="45">45</button>
+    <button type="button" class="chip" data-fill="duration" data-value="60">60</button>
+    <button type="button" class="chip" data-fill="duration" data-value="90">90</button>
+  </div>
+  {% for error in form.duration.errors %}
+    <p class="field__error">{{ error }}</p>
+  {% endfor %}
+</div>
+
+{% include 'includes/field.html' with field=form.status label="Lesson status" %}

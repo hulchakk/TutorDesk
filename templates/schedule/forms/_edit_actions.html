@@ -1,0 +1,20 @@
+{% comment %}
+  Buttons of an edit form in the panel.
+  Usage: {% include 'schedule/forms/_edit_actions.html' with cancel_url=... delete_url=... delete_confirm="..." %}
+  "Cancel" loads the create form back into the panel (and closes it on mobile).
+  delete_url is optional.
+{% endcomment %}
+<div class="form__actions">
+  <button type="submit" class="btn btn--primary btn--block">Save changes</button>
+  <div class="{% if delete_url %}form__row{% else %}form__actions{% endif %}">
+    <button type="button" class="btn btn--ghost" data-panel-close
+            hx-get="{{ cancel_url }}"
+            hx-target="#form-container"
+            hx-swap="innerHTML">Cancel</button>
+    {% if delete_url %}
+      <button type="button" class="btn btn--danger"
+              hx-post="{{ delete_url }}"
+              hx-confirm="{{ delete_confirm|default:'Delete? This can’t be undone.' }}">Delete</button>
+    {% endif %}
+  </div>
+</div>

@@ -1,30 +1,17 @@
-<form hx-post="{% url 'schedule:student-update' pk=student.pk %}"
+<form class="form"
+      hx-post="{% url 'schedule:student-update' pk=student.pk %}"
       hx-target="this"
-      hx-swap="outerHTML">
+      hx-swap="outerHTML"
+      hx-disabled-elt="#form-container button[type=submit]">
 
-  <h1>Update student {{ student.name }}</h1>
+  <h2 class="form__title">Edit student</h2>
 
-  {% if form.non_field_errors %}
-    <div class="form-error">
-      {{ form.non_field_errors }}
-    </div>
+  {% include 'schedule/forms/_student_fields.html' %}
+
+  {% if student.group_id %}
+    {% url 'schedule:group-student-create' pk=student.group_id as cancel_url %}
+  {% else %}
+    {% url 'schedule:student-create' as cancel_url %}
   {% endif %}
-
-  <label>
-    Student name:
-    {{ form.name }}
-    {% if form.name.errors %}
-      <span class="field-error">{{ form.name.errors }}</span>
-    {% endif %}
-  </label>
-
-  <label>
-    Available Tariffs:
-    {{ form.available_tariffs }}
-    {% if form.available_tariffs.errors %}
-      <span class="field-error">{{ form.available_tariffs.errors }}</span>
-    {% endif %}
-  </label>
-
-  <button type="submit">Save</button>
+  {% include 'schedule/forms/_edit_actions.html' with cancel_url=cancel_url %}
 </form>

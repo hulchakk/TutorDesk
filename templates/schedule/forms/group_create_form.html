@@ -1,22 +1,15 @@
-<form hx-post="{% url 'schedule:group-create' %}"
+<form class="form"
+      hx-post="{% url 'schedule:group-create' %}"
       hx-target="this"
-      hx-swap="outerHTML">
+      hx-swap="outerHTML"
+      hx-disabled-elt="#form-container button[type=submit]">
 
-<h1>Create group</h1>
+  <h2 class="form__title">New group</h2>
 
-  {% if form.non_field_errors %}
-    <div class="form-error">
-      {{ form.non_field_errors }}
-    </div>
-  {% endif %}
+  {% include 'includes/form_errors.html' %}
+  {% include 'includes/field.html' with field=form.name label="Group name" %}
 
-  <label>
-    Group name:
-    {{ form.name }}
-    {% if form.name.errors %}
-      <span class="field-error">{{ form.name.errors }}</span>
-    {% endif %}
-  </label>
-
-  <button type="submit">Create</button>
+  <div class="form__actions">
+    <button type="submit" class="btn btn--primary btn--block">Create group</button>
+  </div>
 </form>
