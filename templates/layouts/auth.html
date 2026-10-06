@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% comment %}
+  Centered card for login / registration / password pages. Child templates fill {% block card %}.
+{% endcomment %}
+
+{% block topbar %}{% endblock %}
+
+{% block page_class %}page--auth{% endblock %}
+
+{% block content %}
+<div class="card auth-card">
+  {% block card %}
+  {% endblock %}
+</div>
+{% endblock %}
