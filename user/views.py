@@ -5,6 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -12,6 +13,7 @@ from django.views.decorators.http import require_GET
 from django.views.generic import FormView, TemplateView
 
 from schedule.models import Student
+from user.decorators import teacher_required
 from user.forms import RegisterForm, ChangePasswordForm, ResetPasswordForm
 from user.models import InviteToken, ActivationToken, ResetPasswordToken
 
@@ -23,20 +25,23 @@ def find_invite_token(token_id: str | None) -> InviteToken | None:
     try:
         return (
             InviteToken.objects.select_related("student_profile")
-            .filter(id=token_id)
+            .filter(id=token_id, student_profile__user__isnull=True)
             .first()
         )
     except ValidationError:
         return None
 
 
+@teacher_required
 @require_GET
 def get_invite_url(request, pk: int) -> HttpResponse:
     student = get_object_or_404(
         Student.active_objects.select_related(
             "invite_token",
         ),
+        Q(teacher=request.user) | Q(group__teacher=request.user),
         pk=pk,
+        user__isnull=True,
     )
 
     if hasattr(student, "invite_token"):
