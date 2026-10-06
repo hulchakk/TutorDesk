@@ -19,9 +19,10 @@ from services.payments.exeptions import PaymentError
 from services.payments.interfaces import CheckoutSession, IPaymentsService
 from services.payments.monobank import MonobankService, verify_monobank_signature
 from subscriptions.models import StudentSubscription, TariffPlan, TariffType
+from user.mixins import StudentRequiredMixin
 
 
-class StudentProfilesListView(ListView):
+class StudentProfilesListView(StudentRequiredMixin, ListView):
     template_name = "payments/student_profiles_list.html"
     context_object_name = "profiles"
     # While an order is pending the page re-checks itself every few seconds, up to this many times.
@@ -62,7 +63,7 @@ class StudentProfilesListView(ListView):
         return context
 
 
-class AvailableTariffsView(DetailView):
+class AvailableTariffsView(StudentRequiredMixin, DetailView):
     template_name = "payments/buy_lessons.html"
     context_object_name = "profile"
 
@@ -90,7 +91,7 @@ class AvailableTariffsView(DetailView):
         return context
 
 
-class BuyLessonsView(View):
+class BuyLessonsView(StudentRequiredMixin, View):
     def post(self, request, pk, tariff_pk):
         student = get_object_or_404(
             Student.active_objects.filter(user=request.user).prefetch_related(
