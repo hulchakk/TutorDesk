@@ -34,6 +34,17 @@ def find_invite_token(token_id: str | None) -> InviteToken | None:
         return None
 
 
+def notify_password_changed(request, user) -> None:
+    try:
+        EmailNotificationsService().send_password_changed_email(
+            user.email,
+            user.name,
+            request.build_absolute_uri(reverse("user:reset-password-request")),
+        )
+    except NotificationError:
+        pass
+
+
 @teacher_required
 @require_GET
 def get_invite_url(request, pk: int) -> HttpResponse:
@@ -197,6 +208,7 @@ def change_password_view(request):
         if form.is_valid():
             user = form.save()
             update_session_auth_hash(request, user)
+            notify_password_changed(request, user)
             messages.success(request, "Password changed")
             return redirect("user:user-menu")
     else:
@@ -277,8 +289,9 @@ def reset_password_complete_view(request) -> HttpResponse:
     if request.method == "POST":
         form = ResetPasswordForm(user=token.user, data=request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
             token.delete()
+            notify_password_changed(request, user)
             return render(
                 request,
                 template_name="accounts/reset_password/successful.html",
