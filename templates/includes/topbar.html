@@ -1,0 +1,12 @@
+{% comment %}
+  Back + main menu buttons. Rendered by base.html; pages that hide it can include it again.
+{% endcomment %}
+<header class="topbar">
+  <button type="button" class="icon-btn" aria-label="Back"
+          onclick="history.length > 1 ? history.back() : location.assign('{% url 'user:user-menu' %}')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  </button>
+  <a href="{% url 'user:user-menu' %}" class="icon-btn" aria-label="Main menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
+  </a>
+</header>
