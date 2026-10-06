@@ -92,6 +92,36 @@ class Student(models.Model):
 
             return count
 
+    def refund_lessons(self, count: int = 1) -> int:
+        if count <= 0:
+            return 0
+
+        with transaction.atomic():
+            debts = list(
+                self.subscriptions.select_for_update()
+                .filter(lessons_left__lt=0)
+                .order_by("-created_at")
+            )
+
+            remaining_to_refund = count
+
+            for debt in debts:
+                if remaining_to_refund <= 0:
+                    break
+
+                covered = min(-debt.lessons_left, remaining_to_refund)
+                debt.lessons_left += covered
+                debt.save(update_fields=["lessons_left", "updated_at"])
+                remaining_to_refund -= covered
+
+            if remaining_to_refund > 0:
+                self.subscriptions.create(
+                    lessons_left=remaining_to_refund,
+                    expires_at=None,
+                )
+
+            return count
+
     def clean(self):
         super().clean()
         if self.teacher and not getattr(self.teacher, "is_teacher", False):
