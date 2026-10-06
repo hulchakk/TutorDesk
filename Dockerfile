@@ -16,4 +16,6 @@ RUN pip install uv && uv pip install --system -r pyproject.toml
 
 COPY . .
 
-CMD ["sh", "-c", "python manage.py wait_for_db && python manage.py migrate && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"]
+EXPOSE 8000
+
+CMD ["sh", "-c", "python manage.py wait_for_db && python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn tutor_app.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"]
