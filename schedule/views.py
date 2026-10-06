@@ -234,6 +234,9 @@ class LessonUpdateView(TeacherRequiredMixin, LessonFormMixin, UpdateView):
     context_object_name = "lesson"
     success_message = "Lesson updated"
 
+    def get_queryset(self):
+        return Lesson.objects.filter(student__teacher=self.request.user)
+
 
 @teacher_required
 @require_POST
@@ -262,6 +265,9 @@ class GroupLessonUpdateView(TeacherRequiredMixin, LessonFormMixin, UpdateView):
     template_name = "schedule/forms/group_lesson_update_form.html"
     context_object_name = "lesson"
     success_message = "Group lesson updated"
+
+    def get_queryset(self):
+        return GroupLesson.objects.filter(group__teacher=self.request.user)
 
 
 @teacher_required
