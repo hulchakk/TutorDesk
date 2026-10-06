@@ -222,6 +222,12 @@ class Lesson(LessonAbstract):
     def teacher(self):
         return self.student.teacher
 
+    def charged_student_ids(self) -> set[int]:
+        if self.status != LessonStatusEnum.FINISHED or not self.student_id:
+            return set()
+
+        return {self.student_id}
+
     def clean(self):
         super().clean()
 
@@ -303,6 +309,23 @@ class Lesson(LessonAbstract):
 class GroupLesson(LessonAbstract):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="lessons")
     attendance_list = models.JSONField(null=False, blank=True, default=list)
+
+    def charged_student_ids(self) -> set[int]:
+        if self.status != LessonStatusEnum.FINISHED or not self.group_id:
+            return set()
+
+        if self.attendance_list:
+            return {
+                record["student_id"]
+                for record in self.attendance_list
+                if record.get("status") == AttendanceStatusEnum.PRESENT
+            }
+
+        return set(
+            Student.active_objects.filter(group_id=self.group_id).values_list(
+                "pk", flat=True
+            )
+        )
 
     def clean(self):
         super().clean()
