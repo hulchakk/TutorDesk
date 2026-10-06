@@ -1,58 +1,55 @@
 import logging
 
 from celery import shared_task
-from django.db import models, transaction
+from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 
-from schedule.models import Lesson, GroupLesson, LessonStatusEnum, Student
+from schedule.models import GroupLesson, Lesson, LessonStatusEnum
+from schedule.services import apply_lesson_charges
 
 logger = logging.getLogger(__name__)
 
 
+def finish_past_lessons(model) -> int:
+    lesson_ids = list(
+        model.objects.alias(end_datetime=F("start_datetime") + F("duration"))
+        .filter(status=LessonStatusEnum.PLANNED, end_datetime__lt=timezone.now())
+        .values_list("pk", flat=True)
+    )
+
+    finished_count = 0
+
+    for lesson_id in lesson_ids:
+        with transaction.atomic():
+            lesson = (
+                model.objects.select_for_update()
+                .filter(pk=lesson_id, status=LessonStatusEnum.PLANNED)
+                .first()
+            )
+
+            if not lesson:
+                continue
+
+            lesson.status = LessonStatusEnum.FINISHED
+            apply_lesson_charges(set(), lesson.charged_student_ids())
+            model.objects.filter(pk=lesson_id).update(status=LessonStatusEnum.FINISHED)
+            finished_count += 1
+
+    return finished_count
+
+
 @shared_task
 def consume_completed_lessons() -> dict:
-    now = timezone.now()
-
-    with transaction.atomic():
-        completed_individual = Lesson.objects.select_related("student").filter(
-            status=LessonStatusEnum.PLANNED,
-            start_datetime__lt=now,
-        )
-
-        individual_count = 0
-        for lesson in completed_individual:
-            lesson.student.consume_lessons(1)
-            lesson.status = LessonStatusEnum.FINISHED
-            lesson.save(update_fields=["status", "updated_at"])
-            individual_count += 1
-
-        completed_group = GroupLesson.objects.filter(
-            status=LessonStatusEnum.PLANNED,
-            start_datetime__lt=now,
-        )
-
-        group_count = 0
-        present_student_ids = set()
-
-        for group_lesson in completed_group:
-            for record in group_lesson.attendance_list:
-                if record.get("status") == "present":
-                    present_student_ids.add(record["student_id"])
-
-            group_lesson.status = LessonStatusEnum.FINISHED
-            group_lesson.save(update_fields=["status", "updated_at"])
-            group_count += 1
-
-        for student_id in present_student_ids:
-            try:
-                student = Student.objects.get(pk=student_id)
-                student.consume_lessons(1)
-            except Student.DoesNotExist:
-                logger.warning("Student %s not found", student_id)
+    result = {
+        "individual": finish_past_lessons(Lesson),
+        "group": finish_past_lessons(GroupLesson),
+    }
 
     logger.info(
-        "Consumed lessons: %d individual, %d group attendees",
-        individual_count,
-        len(present_student_ids),
+        "Finished lessons: %d individual, %d group",
+        result["individual"],
+        result["group"],
     )
-    return {"individual": individual_count, "group_attendees": len(present_student_ids)}
+
+    return result
