@@ -65,7 +65,7 @@ services:
 
   celery-beat:
     build: .
-    command: celery -A tutor_app beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    command: celery -A tutor_app beat -l info
     volumes:
       - .:/app
     environment:
