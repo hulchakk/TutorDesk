@@ -109,7 +109,7 @@ def get_monobank_public_key(force_refresh: bool = False) -> str:
     key = None if force_refresh else cache.get(cache_key)
 
     if not key:
-        headers = {"X-Token": settings.MONOBANK_API_TOKEN}
+        headers = {"X-Token": settings.MONOBANK_TOKEN}
         response = httpx.get(
             "https://api.monobank.ua/api/merchant/pubkey",
             headers=headers,
