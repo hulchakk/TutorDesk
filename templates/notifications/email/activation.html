@@ -1,0 +1,12 @@
+{% extends 'notifications/email/base.html' %}
+
+{% block preheader %}Confirm your email to finish registration.{% endblock %}
+
+{% block heading %}Welcome{% if name %}, {{ name }}{% endif %}!{% endblock %}
+
+{% block content %}
+  <p style="margin:0 0 12px;color:#1e1e1e;">Thanks for signing up. Confirm your email address to activate your account and start using Tutor App.</p>
+  <p style="margin:0;color:#7b7472;">If you didn't create an account, just ignore this email.</p>
+{% endblock %}
+
+{% block footer %}You received this email because someone signed up for Tutor App with this address.{% endblock %}
