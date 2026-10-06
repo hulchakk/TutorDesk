@@ -1,0 +1,36 @@
+{% with balance=student.total_lessons_count tariffs=student.available_tariffs.all %}
+<article class="item-row" data-list-item data-panel-item
+         data-search="{{ student.name }}{% for tariff in tariffs %} {{ tariff.name }}{% endfor %}">
+  <div class="item-row__body">
+    <h3 class="item-row__title">{{ student.name }}</h3>
+    <p class="item-row__meta">
+      <span>Balance: <strong class="{% if balance > 0 %}text-success{% else %}text-danger{% endif %}">{{ balance }} lesson{{ balance|pluralize }}</strong></span>
+      <span class="meta-sep" aria-hidden="true">•</span>
+      {% if tariffs %}
+        <span>Tariff: {% for tariff in tariffs %}{{ tariff.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+      {% else %}
+        <span class="text-faint">No tariff</span>
+      {% endif %}
+      {% if student.user_id %}
+        <span class="tag tag--mint">Registered</span>
+      {% endif %}
+    </p>
+  </div>
+
+  <div class="item-row__actions">
+    {% if not student.user_id %}
+      <button type="button" class="btn btn--link btn--sm"
+              data-copy-url="{% url 'user:get-invite' pk=student.pk %}"
+              data-copy-label="Invite link"
+              title="Copy a link the student can use to log in or sign up">Copy invite</button>
+    {% endif %}
+    <button type="button" class="btn btn--link btn--sm"
+            hx-get="{% url 'schedule:student-update' pk=student.pk %}"
+            hx-target="#form-container"
+            hx-swap="innerHTML">Edit</button>
+    <button type="button" class="btn btn--danger btn--sm"
+            hx-post="{% url 'schedule:student-delete' pk=student.pk %}"
+            hx-confirm="Delete {{ student.name }}? Their lesson history stays, but they'll disappear from your lists.">Delete</button>
+  </div>
+</article>
+{% endwith %}

@@ -1,27 +1,14 @@
-{% extends 'base.html' %}
+{% extends 'layouts/workspace.html' %}
 
 {% block title %}
-	My - schedule
+  My schedule
 {% endblock %}
 
-{% block content %}
-  <button hx-get="{% url 'schedule:lesson-create' %}"
-        hx-target="#form-container"
-        hx-swap="innerHTML">
-    + Add new lesson
-  </button>
+{% block workspace_class %}workspace--fit{% endblock %}
+{% block panel_url %}{% url 'schedule:lesson-create' %}{% endblock %}
+{% block fab_url %}{% url 'schedule:lesson-create' %}{% endblock %}
+{% block fab_label %}Add lesson{% endblock %}
 
-  <button hx-get="{% url 'schedule:group-lesson-create' %}"
-        hx-target="#form-container"
-        hx-swap="innerHTML">
-    + Add new group lesson
-  </button>
-
-  <div id="form-container"
-       hx-get="{% url 'schedule:lesson-create' %}"
-       hx-trigger="load"
-       hx-swap="innerHTML">
-  </div>
-
+{% block main %}
   {% include 'schedule/includes/schedule.html' %}
 {% endblock %}
