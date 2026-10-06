@@ -15,11 +15,13 @@ I built it because I know tutors who keep all of this in notebooks, spreadsheets
 - **Weekly schedule.** A week view that shows individual and group lessons, highlights today and shows the **free slots** between lessons. Click a free slot and the form opens with that time already filled in.
 - **Conflict detection.** The app won't let you book two lessons at the same time, for the teacher or for a student. Group lessons are checked too.
 - **Invite links.** Generate a personal link for a student. When they open it and log in or sign up, their account is linked to the profile you created for them.
+- **Balances that update themselves.** Lessons that have ended are written off automatically twice a day. If you change the schedule later (mark a lesson as canceled, bring it back, change who attended, delete it), every affected student's balance is corrected right away.
 
 ### For students
 - **My teachers.** See every teacher and group you study with, along with your active packages and lesson balance.
 - **Buy lessons online.** Pick a tariff, pay through Monobank, and the lessons are added to your balance as soon as the bank confirms the payment.
 - **Live payment status.** After checkout you're sent back to the app, and the page checks the payment status automatically for up to a minute. No manual refreshing.
+- **Receipts by email.** After a successful payment Monobank emails the official receipt, and the app sends its own confirmation with the order details.
 
 ### Accounts
 - Email-based login with no usernames. Registration requires email activation.
@@ -35,7 +37,7 @@ I built it because I know tutors who keep all of this in notebooks, spreadsheets
 | **Django 5.2** | Core of the app: custom `User` model with email login, class-based views, forms, admin. Split settings for `dev` and `prod`. |
 | **PostgreSQL 16** | Main database. I used DB-level constraints (`CheckConstraint`, conditional `UniqueConstraint`) so invalid data can't get in, even from outside the app. |
 | **HTMX** | Interactive forms and list updates without a JS framework. A small `HTMXFormMixin` returns validation errors inline and redirects with `HX-Redirect` on success. |
-| **Celery + Redis** | Emails are sent in the background with automatic retries, so a slow mail server never slows down a request. |
+| **Celery + Redis** | Emails and Monobank receipts are sent in the background with automatic retries, so a slow external service never slows down a request. **Celery Beat** runs a job twice a day that finishes past lessons and writes them off. |
 | **Monobank Acquiring API** | Creates invoices and redirects to checkout. A webhook receives the payment status. |
 | **cryptography (ECDSA)** | Verifies the `X-Sign` signature on every Monobank webhook, so nobody can fake a "payment succeeded" call. |
 | **Django templates + vanilla CSS/JS** | My own small design system (CSS variables, components), responsive layout and HTML emails styled to match the site. |
@@ -54,6 +56,9 @@ The webhook checks Monobank's ECDSA signature before it trusts anything. The ban
 
 **A lesson balance that stays correct.**
 A student can have several packages at once, some expiring and some not. When a lesson is written off, the app takes it from the package that expires soonest. The rows are locked with `select_for_update()` inside a transaction, so two simultaneous requests can't spend the same lesson. If a student runs out, the balance goes negative and shows as debt, and their next purchase covers it automatically.
+
+**Schedule changes never break the math.**
+Each lesson knows which students it charges: the student for an individual lesson, or the attendees for a group one. Before a lesson is saved, the app remembers who was charged. After it's saved, it compares that with who should be charged now, then writes off or refunds only the difference. One small rule covers every status transition, attendance edits and deletions, and saving the same lesson twice never charges anyone twice. Refunds pay off debt first.
 
 **Access control built in from the start.**
 `TeacherRequiredMixin` and `StudentRequiredMixin`, with matching decorators for function views, guard every endpoint. Every query is also scoped to the current user, so changing an ID in the URL won't show you someone else's student, lesson or invite link.
