@@ -1,5 +1,7 @@
+from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash, get_user_model
 from django.contrib.auth.views import LoginView as DjangoLoginView
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -10,6 +12,20 @@ from django.views.generic import FormView, TemplateView
 from schedule.models import Student
 from user.forms import RegisterForm, ChangePasswordForm, ResetPasswordForm
 from user.models import InviteToken, ActivationToken, ResetPasswordToken
+
+
+def find_invite_token(token_id: str | None) -> InviteToken | None:
+    """A used, expired or malformed invite link must not break login or registration."""
+    if not token_id:
+        return None
+    try:
+        return (
+            InviteToken.objects.select_related("student_profile")
+            .filter(id=token_id)
+            .first()
+        )
+    except ValidationError:
+        return None
 
 
 @require_GET
@@ -26,7 +42,8 @@ def get_invite_url(request, pk: int) -> HttpResponse:
     else:
         invite_token = InviteToken.objects.create(student_profile=student)
 
-    relative_url = reverse("user:register")
+    # Login page links to registration and keeps the token, so it fits both new and existing users.
+    relative_url = reverse("user:login")
 
     full_invite_url = (
         f"{request.build_absolute_uri(relative_url)}?token={invite_token.id}"
@@ -41,7 +58,10 @@ class LoginView(DjangoLoginView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["token"] = self.request.GET.get("token", "")
+        # POST keeps the token when the form is re-rendered with errors
+        context["token"] = self.request.POST.get("token") or self.request.GET.get(
+            "token", ""
+        )
         return context
 
     @transaction.atomic
@@ -50,10 +70,9 @@ class LoginView(DjangoLoginView):
 
         token_id = self.request.POST.get("token") or self.request.GET.get("token")
 
-        if token_id:
-            invite_token = InviteToken.objects.select_related("student_profile").get(
-                id=token_id
-            )
+        invite_token = find_invite_token(token_id)
+
+        if invite_token:
             student = invite_token.student_profile
 
             student.user = self.request.user
@@ -71,7 +90,10 @@ class RegisterView(FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["token"] = self.request.GET.get("token", "")
+        # POST keeps the token when the form is re-rendered with errors
+        context["token"] = self.request.POST.get("token") or self.request.GET.get(
+            "token", ""
+        )
         return context
 
     @transaction.atomic
@@ -84,10 +106,9 @@ class RegisterView(FormView):
 
         token_id = self.request.POST.get("token") or self.request.GET.get("token")
 
-        if token_id:
-            invite_token = InviteToken.objects.select_related("student_profile").get(
-                id=token_id
-            )
+        invite_token = find_invite_token(token_id)
+
+        if invite_token:
             student = invite_token.student_profile
 
             student.user = user
@@ -153,6 +174,7 @@ def change_password_view(request):
         if form.is_valid():
             user = form.save()
             update_session_auth_hash(request, user)
+            messages.success(request, "Password changed")
             return redirect("user:user-menu")
     else:
         form = ChangePasswordForm(user=request.user)
@@ -211,7 +233,7 @@ def reset_password_complete_view(request) -> HttpResponse:
             token.delete()
             raise ValueError("Token expired.")
 
-    except (ResetPasswordToken.DoesNotExist, ValueError):
+    except (ResetPasswordToken.DoesNotExist, ValueError, ValidationError):
         return render(
             request,
             template_name="accounts/reset_password/failed.html",
