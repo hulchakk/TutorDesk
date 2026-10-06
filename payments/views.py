@@ -19,6 +19,7 @@ from services.notifications.tasks import send_payment_success_email_task
 from services.payments.exeptions import PaymentError
 from services.payments.interfaces import CheckoutSession, IPaymentsService
 from services.payments.monobank import MonobankService, verify_monobank_signature
+from services.payments.tasks import send_receipt_task
 from subscriptions.models import StudentSubscription, TariffPlan, TariffType
 from user.mixins import StudentRequiredMixin
 
@@ -158,6 +159,7 @@ def notify_payment_success(order: Order, profiles_link: str) -> None:
     send_payment_success_email_task.delay(
         order.student.user.email, order.pk, profiles_link
     )
+    send_receipt_task.delay(order.pk)
 
 
 @csrf_exempt
