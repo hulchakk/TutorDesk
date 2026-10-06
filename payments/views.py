@@ -15,6 +15,8 @@ from django.views.generic import DetailView, ListView
 
 from payments.models import Order, OrderStatus
 from schedule.models import Student
+from services.notifications.email import EmailNotificationsService
+from services.notifications.exceptions import NotificationError
 from services.payments.exeptions import PaymentError
 from services.payments.interfaces import CheckoutSession, IPaymentsService
 from services.payments.monobank import MonobankService, verify_monobank_signature
@@ -150,6 +152,18 @@ class BuyLessonsView(StudentRequiredMixin, View):
         return redirect(checkout_session.checkout_url)
 
 
+def notify_payment_success(order: Order, profiles_link: str) -> None:
+    if not order.student.user:
+        return
+
+    try:
+        EmailNotificationsService().send_payment_success_email(
+            order.student.user.email, order, profiles_link
+        )
+    except NotificationError:
+        pass
+
+
 @csrf_exempt
 @require_POST
 def monobank_webhook_view(request) -> HttpResponse:
@@ -177,7 +191,7 @@ def monobank_webhook_view(request) -> HttpResponse:
         return HttpResponseBadRequest("Invalid reference format")
 
     try:
-        order = Order.objects.select_related("tariff", "student").get(pk=order_id)
+        order = Order.objects.select_related("tariff", "student__user").get(pk=order_id)
     except Order.DoesNotExist:
         return HttpResponse("Order not found, ignored.", status=200)
 
@@ -199,6 +213,13 @@ def monobank_webhook_view(request) -> HttpResponse:
                         if order.tariff.duration_days
                         else None
                     ),
+                )
+
+                profiles_link = request.build_absolute_uri(
+                    reverse("payments:student-profiles")
+                )
+                transaction.on_commit(
+                    lambda: notify_payment_success(order, profiles_link)
                 )
 
     elif status in ["failure", "reversed", "expired"]:
