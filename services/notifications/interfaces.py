@@ -5,7 +5,9 @@ from payments.models import Order
 
 class INotificationsService(ABC):
     @abstractmethod
-    def send_activation_email(self, email: str, name: str, activation_link: str) -> None:
+    def send_activation_email(
+        self, email: str, name: str, activation_link: str
+    ) -> None:
         pass
 
     @abstractmethod
