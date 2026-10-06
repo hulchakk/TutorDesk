@@ -1,0 +1,26 @@
+{% extends 'layouts/auth.html' %}
+
+{% block title %}
+  Reset password
+{% endblock %}
+
+{% block card %}
+<form class="form" method="post" action="{% url 'user:reset-password-request' %}">
+  {% csrf_token %}
+
+  <h1 class="form__title">Forgot password?</h1>
+  <p class="auth-card__subtitle">Enter your email and we'll send you a link to reset it.</p>
+
+  <div class="field">
+    <label class="field__label" for="email">Email</label>
+    <input type="email" id="email" name="email" placeholder="you@example.com"
+           autocomplete="email" autofocus required>
+  </div>
+
+  <button type="submit" class="btn btn--primary btn--block">Send reset link</button>
+
+  <p class="auth-card__switch">
+    Remembered it? <a href="{% url 'user:login' %}">Back to login</a>
+  </p>
+</form>
+{% endblock %}

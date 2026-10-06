@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Top up lessons
+{% endblock %}
+
+{% block page_class %}page--contained{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <nav class="breadcrumbs" aria-label="Breadcrumbs">
+    <a href="{% url 'payments:student-profiles' %}">My lessons</a>
+    <span aria-hidden="true">/</span>
+  </nav>
+  <h1 class="page-head__title">Top up lessons</h1>
+  <p class="page-head__subtitle">
+    {% if profile.group %}{{ profile.group.name }}{% else %}{{ profile.teacher.name }}{% endif %}
+    · current balance:
+    <strong class="{% if balance > 0 %}text-success{% else %}text-danger{% endif %}">{{ balance }} lesson{{ balance|pluralize }}</strong>
+  </p>
+</header>
+
+{% with tariffs=profile.available_tariffs.all %}
+{% if tariffs %}
+<div class="card-grid">
+  {% for tariff in tariffs %}
+  <form class="card tariff-card" method="post" data-submit-once
+        action="{% url 'payments:buy-lessons' pk=profile.pk tariff_pk=tariff.pk %}">
+    {% csrf_token %}
+
+    <header>
+      {% if tariff.tariff_type == tariff_type.PER_LESSON %}
+        <span class="tag tag--mint">Flexible</span>
+      {% else %}
+        <span class="tag">Package</span>
+      {% endif %}
+      <h2 class="tariff-card__name">{{ tariff.name }}</h2>
+    </header>
+
+    {% if tariff.tariff_type == tariff_type.PACKAGE %}
+      <p class="tariff-card__price">
+        <span class="tariff-card__amount">{{ tariff.total_package_price|floatformat:"-2g" }}</span> UAH
+      </p>
+      <ul class="tariff-card__features">
+        <li>{{ tariff.default_lessons_amount }} lesson{{ tariff.default_lessons_amount|pluralize }}</li>
+        {% if tariff.duration_days %}<li>Valid for {{ tariff.duration_days }} day{{ tariff.duration_days|pluralize }}</li>{% endif %}
+        <li>{{ tariff.price_per_lesson|floatformat:"-2g" }} UAH per lesson</li>
+      </ul>
+      <button type="submit" class="btn btn--primary btn--block" data-loading-text="Redirecting to payment…">
+        Buy for {{ tariff.total_package_price|floatformat:"-2g" }} UAH
+      </button>
+    {% else %}
+      <p class="tariff-card__price">
+        <span class="tariff-card__amount">{{ tariff.price_per_lesson|floatformat:"-2g" }}</span> UAH / lesson
+      </p>
+      <ul class="tariff-card__features">
+        <li>Pay only for the lessons you need</li>
+        <li>Lessons don't expire</li>
+      </ul>
+
+      <div class="field">
+        <label class="field__label" for="lessons-{{ tariff.pk }}">Number of lessons</label>
+        <div class="stepper" data-stepper>
+          <button type="button" class="stepper__btn" data-step="-1" aria-label="Fewer lessons">−</button>
+          <input type="number" id="lessons-{{ tariff.pk }}" name="lessons_amount"
+                 value="{{ suggested_lessons }}" min="1" max="50" step="1" inputmode="numeric" required>
+          <button type="button" class="stepper__btn" data-step="1" aria-label="More lessons">+</button>
+        </div>
+        <div class="chips" aria-label="Quick amount">
+          <button type="button" class="chip" data-fill="lessons_amount" data-value="1">1</button>
+          <button type="button" class="chip" data-fill="lessons_amount" data-value="4">4</button>
+          <button type="button" class="chip" data-fill="lessons_amount" data-value="8">8</button>
+          <button type="button" class="chip" data-fill="lessons_amount" data-value="12">12</button>
+        </div>
+      </div>
+
+      <div class="tariff-card__total">
+        <span>Total</span>
+        <strong>
+          <span data-total data-price="{{ tariff.price_per_lesson|stringformat:'s' }}" data-qty="lessons_amount">{% widthratio tariff.price_per_lesson 1 suggested_lessons %}</span> UAH
+        </strong>
+      </div>
+      <button type="submit" class="btn btn--primary btn--block" data-loading-text="Redirecting to payment…">
+        Pay <span data-total data-price="{{ tariff.price_per_lesson|stringformat:'s' }}" data-qty="lessons_amount">{% widthratio tariff.price_per_lesson 1 suggested_lessons %}</span> UAH
+      </button>
+    {% endif %}
+  </form>
+  {% endfor %}
+</div>
+<p class="page-note">Payments are processed securely by Monobank. You'll be redirected back here after paying.</p>
+{% else %}
+  {% include 'includes/list/empty.html' with title="No tariffs available yet" text="Your teacher hasn't set up payment options for you. Ask them to add a tariff." %}
+{% endif %}
+{% endwith %}
+{% endblock %}

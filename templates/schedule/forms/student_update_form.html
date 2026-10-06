@@ -1,0 +1,17 @@
+<form class="form"
+      hx-post="{% url 'schedule:student-update' pk=student.pk %}"
+      hx-target="this"
+      hx-swap="outerHTML"
+      hx-disabled-elt="#form-container button[type=submit]">
+
+  <h2 class="form__title">Edit student</h2>
+
+  {% include 'schedule/forms/_student_fields.html' %}
+
+  {% if student.group_id %}
+    {% url 'schedule:group-student-create' pk=student.group_id as cancel_url %}
+  {% else %}
+    {% url 'schedule:student-create' as cancel_url %}
+  {% endif %}
+  {% include 'schedule/forms/_edit_actions.html' with cancel_url=cancel_url %}
+</form>

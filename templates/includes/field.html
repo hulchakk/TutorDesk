@@ -1,0 +1,13 @@
+{% comment %}
+  Usage: {% include 'includes/field.html' with field=form.name label="Name" %}
+{% endcomment %}
+<div class="field{% if field.errors %} field--error{% endif %}">
+  <label class="field__label" for="{{ field.id_for_label }}">{{ label|default:field.label }}</label>
+  {{ field }}
+  {% if field.help_text %}
+    <p class="field__help">{{ field.help_text }}</p>
+  {% endif %}
+  {% for error in field.errors %}
+    <p class="field__error">{{ error }}</p>
+  {% endfor %}
+</div>

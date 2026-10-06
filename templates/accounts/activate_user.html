@@ -1,0 +1,15 @@
+{% extends 'layouts/auth.html' %}
+
+{% block title %}
+  Account activation
+{% endblock %}
+
+{% block card %}
+  {% url 'user:login' as login_url %}
+  {% if success %}
+    {% include 'includes/message.html' with tone="success" title="Account activated" text="Your account is ready. You can log in now." action_url=login_url action_label="Log in" %}
+  {% else %}
+    {% url 'user:register' as register_url %}
+    {% include 'includes/message.html' with tone="error" title="Activation failed" text="This activation link is invalid, expired, or has already been used. If you've activated your account before, just log in." action_url=login_url action_label="Go to login" secondary_url=register_url secondary_label="Create a new account" %}
+  {% endif %}
+{% endblock %}

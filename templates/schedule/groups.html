@@ -1,0 +1,45 @@
+{% extends 'layouts/workspace.html' %}
+
+{% block title %}
+  My groups
+{% endblock %}
+
+{% block panel_url %}{% url 'schedule:group-create' %}{% endblock %}
+{% block fab_url %}{% url 'schedule:group-create' %}{% endblock %}
+{% block fab_label %}Add group{% endblock %}
+
+{% block main %}
+<div class="list-card card" data-list data-page-size="10">
+  {% include 'includes/list/head.html' with title="All groups" total=groups|length noun="groups" search_placeholder="Search groups" %}
+
+  <div class="list-card__items">
+    {% for group in groups %}
+    <article class="item-row" data-list-item data-panel-item data-search="{{ group.name }}">
+      <div class="item-row__body">
+        <h3 class="item-row__title">
+          <a href="{% url 'schedule:group-students' pk=group.pk %}">{{ group.name }}</a>
+        </h3>
+        <p class="item-row__meta">
+          <span>{{ group.active_students_count }} student{{ group.active_students_count|pluralize }}</span>
+        </p>
+      </div>
+
+      <div class="item-row__actions">
+        <a href="{% url 'schedule:group-students' pk=group.pk %}" class="btn btn--link btn--sm">Members</a>
+        <button type="button" class="btn btn--link btn--sm"
+                hx-get="{% url 'schedule:group-update' pk=group.pk %}"
+                hx-target="#form-container"
+                hx-swap="innerHTML">Edit</button>
+        <button type="button" class="btn btn--danger btn--sm"
+                hx-post="{% url 'schedule:group-delete' pk=group.pk %}"
+                hx-confirm="Delete group {{ group.name }}?">Delete</button>
+      </div>
+    </article>
+    {% empty %}
+      {% include 'includes/list/empty.html' with title="No groups yet" text="Create your first group using the form." %}
+    {% endfor %}
+  </div>
+
+  {% include 'includes/list/footer.html' %}
+</div>
+{% endblock %}

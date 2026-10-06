@@ -1,0 +1,14 @@
+<form class="form"
+      hx-post="{% url 'schedule:group-student-create' pk=group.pk %}"
+      hx-target="this"
+      hx-swap="outerHTML"
+      hx-disabled-elt="#form-container button[type=submit]">
+
+  <h2 class="form__title">New member</h2>
+
+  {% include 'schedule/forms/_student_fields.html' %}
+
+  <div class="form__actions">
+    <button type="submit" class="btn btn--primary btn--block">Add to group</button>
+  </div>
+</form>

@@ -1,0 +1,25 @@
+{% extends 'layouts/workspace.html' %}
+
+{% block title %}
+  My students
+{% endblock %}
+
+{% block panel_url %}{% url 'schedule:student-create' %}{% endblock %}
+{% block fab_url %}{% url 'schedule:student-create' %}{% endblock %}
+{% block fab_label %}Add student{% endblock %}
+
+{% block main %}
+<div class="list-card card" data-list data-page-size="10">
+  {% include 'includes/list/head.html' with title="All students" total=students|length noun="students" search_placeholder="Search by name or tariff" %}
+
+  <div class="list-card__items">
+    {% for student in students %}
+      {% include 'schedule/includes/student_row.html' %}
+    {% empty %}
+      {% include 'includes/list/empty.html' with title="No students yet" text="Add your first student using the form." %}
+    {% endfor %}
+  </div>
+
+  {% include 'includes/list/footer.html' %}
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% comment %}
+  Two-column layout: forms panel + main content.
+  Child templates set {% block panel_url %} (form loaded into the panel on page load)
+  and fill {% block main %}. Add "workspace--fit" via {% block workspace_class %}
+  to make the main column exactly as tall as the panel on desktop.
+{% endcomment %}
+
+{% block content %}
+<div class="workspace {% block workspace_class %}{% endblock %}">
+  <aside class="panel" aria-label="Form panel">
+    <div class="panel__sheet">
+      <div class="panel__grabber" data-panel-close></div>
+      <button type="button" class="icon-btn panel__close" aria-label="Close" data-panel-close>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <div id="form-container"
+           hx-get="{% block panel_url %}{% endblock %}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div class="panel-loading"></div>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-backdrop" data-panel-close></div>
+
+  <section class="workspace__main">
+    {% block main %}
+    {% endblock %}
+  </section>
+</div>
+
+<button type="button" class="fab" aria-label="{% block fab_label %}Add{% endblock %}"
+        hx-get="{% block fab_url %}{% endblock %}"
+        hx-target="#form-container"
+        hx-swap="innerHTML">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+{% endblock %}

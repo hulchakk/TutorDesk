@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  My lessons
+{% endblock %}
+
+{% block page_class %}page--contained{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <h1 class="page-head__title">My lessons</h1>
+  <p class="page-head__subtitle">Your teachers and groups, lesson balance and top-ups</p>
+</header>
+
+<div id="payments-body">
+  {% if order %}
+    {% include 'payments/_order_status.html' %}
+  {% endif %}
+
+  {% if profiles %}
+  <div class="card-grid">
+    {% for profile in profiles %}
+    {% with balance=profile.total_lessons_count %}
+    <article class="card profile-card">
+      <header>
+        {% if profile.group %}
+          <span class="tag">Group</span>
+          <h2 class="profile-card__name">{{ profile.group.name }}</h2>
+          <p class="profile-card__meta">Teacher: {{ profile.group.teacher.name }}</p>
+        {% else %}
+          <span class="tag tag--mint">Individual</span>
+          <h2 class="profile-card__name">{{ profile.teacher.name }}</h2>
+          <p class="profile-card__meta">Individual lessons</p>
+        {% endif %}
+      </header>
+
+      <div class="stat">
+        <span class="stat__value {% if balance > 0 %}text-success{% else %}text-danger{% endif %}">{{ balance }}</span>
+        <span class="stat__label">lesson{{ balance|pluralize }} left</span>
+      </div>
+
+      {% if balance < 0 %}
+        <p class="notice notice--error">
+          {% widthratio balance 1 -1 as unpaid %}
+          You have {{ unpaid }} unpaid lesson{{ unpaid|pluralize }}. Top up to cover {{ unpaid|pluralize:"it,them" }}.
+        </p>
+      {% endif %}
+
+      {% if profile.active_subscriptions %}
+      <ul class="plan-list" aria-label="Active plans">
+        {% for sub in profile.active_subscriptions %}
+        <li class="plan-list__item">
+          <span class="plan-list__name">{{ sub.tariff_plan.name|default:"Manual top-up" }}</span>
+          <span class="plan-list__meta">
+            {{ sub.lessons_left }} left
+            {% if sub.days_left is not None %}
+              · <span class="{% if sub.days_left <= 7 %}text-danger{% endif %}">expires in {{ sub.days_left }} day{{ sub.days_left|pluralize }}</span>
+            {% endif %}
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <a href="{% url 'payments:available-tariffs' pk=profile.pk %}" class="btn btn--primary btn--block">Top up</a>
+    </article>
+    {% endwith %}
+    {% endfor %}
+  </div>
+  {% else %}
+    {% include 'includes/list/empty.html' with title="You don't have any teachers yet" text="Ask your teacher for an invite link to see your lessons here." %}
+  {% endif %}
+</div>
+{% endblock %}

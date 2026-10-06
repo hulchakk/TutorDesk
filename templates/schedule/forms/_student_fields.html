@@ -1,0 +1,31 @@
+{% comment %}
+  Fields shared by student create/update forms.
+{% endcomment %}
+{% include 'includes/form_errors.html' %}
+
+{% include 'includes/field.html' with field=form.name label="Name" %}
+
+<fieldset class="field{% if form.available_tariffs.errors %} field--error{% endif %}">
+  <legend class="field__label">Available tariffs</legend>
+  <div class="option-list">
+    {% for choice in form.available_tariffs %}
+      {% with tariff=choice.data.value.instance %}
+      <label class="option-card">
+        {{ choice.tag }}
+        <span class="option-card__body">
+          <span class="option-card__title">{{ tariff.name }}</span>
+          <span class="option-card__meta">
+            {{ tariff.get_tariff_type_display }} · {{ tariff.price_per_lesson|floatformat:"-2" }} UAH / lesson
+          </span>
+        </span>
+      </label>
+      {% endwith %}
+    {% empty %}
+      <p class="field__help">No active tariffs yet. Ask an administrator to create one.</p>
+    {% endfor %}
+  </div>
+  <p class="field__help">The student will only be able to pay with the selected tariffs.</p>
+  {% for error in form.available_tariffs.errors %}
+    <p class="field__error">{{ error }}</p>
+  {% endfor %}
+</fieldset>

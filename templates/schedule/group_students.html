@@ -1,0 +1,26 @@
+{% extends 'layouts/workspace.html' %}
+
+{% block title %}
+  {{ group.name }} — members
+{% endblock %}
+
+{% block panel_url %}{% url 'schedule:group-student-create' pk=group.pk %}{% endblock %}
+{% block fab_url %}{% url 'schedule:group-student-create' pk=group.pk %}{% endblock %}
+{% block fab_label %}Add member{% endblock %}
+
+{% block main %}
+{% url 'schedule:groups' as groups_url %}
+<div class="list-card card" data-list data-page-size="10">
+  {% include 'includes/list/head.html' with title=group.name total=group.students.all|length noun="members" search_placeholder="Search members" breadcrumb_url=groups_url breadcrumb_label="Groups" %}
+
+  <div class="list-card__items">
+    {% for student in group.students.all %}
+      {% include 'schedule/includes/student_row.html' %}
+    {% empty %}
+      {% include 'includes/list/empty.html' with title="No members yet" text="Add the first student to this group using the form." %}
+    {% endfor %}
+  </div>
+
+  {% include 'includes/list/footer.html' %}
+</div>
+{% endblock %}

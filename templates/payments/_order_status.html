@@ -1,0 +1,41 @@
+{% comment %}
+  Banner shown after returning from Monobank (?order=<id>).
+  While the order is pending, re-fetches the page body a few times until the webhook confirms it.
+{% endcomment %}
+{% if order.status == 'completed' %}
+  <div class="notice notice--banner notice--success" role="status">
+    <span>
+      <span class="notice__title">Payment received</span>
+      {{ order.lessons_amount }} lesson{{ order.lessons_amount|pluralize }} added{% if order.tariff %} · {{ order.tariff.name }}{% endif %}
+    </span>
+  </div>
+{% elif order.status == 'failed' %}
+  <div class="notice notice--banner notice--error" role="alert">
+    <span>
+      <span class="notice__title">The payment didn't go through</span>
+      No money was charged. You can try again.
+    </span>
+    <a href="{% url 'payments:available-tariffs' pk=order.student_id %}">Try again →</a>
+  </div>
+{% else %}
+  <div class="notice notice--banner notice--pending" role="status"
+       {% if keep_polling %}
+       hx-get="{% url 'payments:student-profiles' %}?order={{ order.pk }}&poll={{ poll|add:1 }}"
+       hx-trigger="load delay:3s"
+       hx-select="#payments-body"
+       hx-target="#payments-body"
+       hx-swap="outerHTML"
+       {% endif %}>
+    <span>
+      <span class="notice__title">Confirming your payment…</span>
+      {% if keep_polling %}
+        This usually takes a few seconds. The balance will update automatically.
+      {% else %}
+        It's taking longer than usual. Your lessons will appear as soon as the bank confirms the payment.
+      {% endif %}
+    </span>
+    {% if not keep_polling %}
+      <a href="{% url 'payments:student-profiles' %}?order={{ order.pk }}">Refresh</a>
+    {% endif %}
+  </div>
+{% endif %}

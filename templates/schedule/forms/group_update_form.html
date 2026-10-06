@@ -1,0 +1,14 @@
+<form class="form"
+      hx-post="{% url 'schedule:group-update' pk=group.pk %}"
+      hx-target="this"
+      hx-swap="outerHTML"
+      hx-disabled-elt="#form-container button[type=submit]">
+
+  <h2 class="form__title">Edit group</h2>
+
+  {% include 'includes/form_errors.html' %}
+  {% include 'includes/field.html' with field=form.name label="Group name" %}
+
+  {% url 'schedule:group-create' as cancel_url %}
+  {% include 'schedule/forms/_edit_actions.html' with cancel_url=cancel_url %}
+</form>

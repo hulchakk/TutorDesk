@@ -1,0 +1,21 @@
+{% extends 'layouts/auth.html' %}
+
+{% block title %}
+  Set a new password
+{% endblock %}
+
+{% block card %}
+<form class="form" method="post" action="{% url 'user:reset-password-complete' %}">
+  {% csrf_token %}
+  <input type="hidden" name="token" value="{{ token }}">
+
+  <h1 class="form__title">Set a new password</h1>
+  <p class="auth-card__subtitle">Choose a password you haven't used before.</p>
+
+  {% include 'includes/form_errors.html' %}
+  {% include 'includes/field.html' with field=form.new_password label="New password" %}
+  {% include 'includes/field.html' with field=form.repeat_new_password label="Repeat new password" %}
+
+  <button type="submit" class="btn btn--primary btn--block">Save password</button>
+</form>
+{% endblock %}

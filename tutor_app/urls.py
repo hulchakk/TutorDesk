@@ -15,9 +15,22 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+import os
+
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.views.generic import RedirectView
 
 urlpatterns = [
+    path("", RedirectView.as_view(pattern_name="user:user-menu"), name="home"),
     path("admin/", admin.site.urls),
+    path("", include("user.urls", namespace="user")),
+    path("schedule/", include("schedule.urls", namespace="schedule")),
+    path("payments/", include("payments.urls", namespace="payments")),
 ]
+
+
+if os.getenv("DJANGO_SETTINGS_MODULE") == "tutor_app.settings.dev":
+    from debug_toolbar.toolbar import debug_toolbar_urls
+
+    urlpatterns += debug_toolbar_urls()

@@ -1,0 +1,14 @@
+<form class="form"
+      hx-post="{% url 'schedule:group-lesson-update' pk=lesson.id %}"
+      hx-target="this"
+      hx-swap="outerHTML"
+      hx-disabled-elt="#form-container button[type=submit]">
+
+  <h2 class="form__title">Edit group lesson</h2>
+
+  {% include 'schedule/forms/_lesson_fields.html' with party_field=form.group party_label="Group" %}
+
+  {% url 'schedule:lesson-create' as cancel_url %}
+  {% url 'schedule:group-lesson-delete' pk=lesson.id as delete_url %}
+  {% include 'schedule/forms/_edit_actions.html' with cancel_url=cancel_url delete_url=delete_url delete_confirm="Delete this group lesson? This can’t be undone." %}
+</form>

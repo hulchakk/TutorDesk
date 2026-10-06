@@ -1,0 +1,22 @@
+<form class="form"
+      hx-post="{% url 'schedule:group-lesson-create' %}"
+      hx-target="this"
+      hx-swap="outerHTML"
+      hx-disabled-elt="#form-container button[type=submit]">
+
+  <div class="segmented" role="tablist" aria-label="Lesson type">
+    <button type="button" class="segmented__item" role="tab" aria-selected="false"
+            hx-get="{% url 'schedule:lesson-create' %}{% if request.GET.start %}?start={{ request.GET.start|urlencode }}{% endif %}"
+            hx-target="#form-container"
+            hx-swap="innerHTML">Individual</button>
+    <button type="button" class="segmented__item is-active" role="tab" aria-selected="true">Group</button>
+  </div>
+
+  <h2 class="form__title">New group lesson</h2>
+
+  {% include 'schedule/forms/_lesson_fields.html' with party_field=form.group party_label="Group" %}
+
+  <div class="form__actions">
+    <button type="submit" class="btn btn--primary btn--block">Add to schedule</button>
+  </div>
+</form>

@@ -1,0 +1,29 @@
+{% extends 'layouts/auth.html' %}
+
+{% block title %}
+  Log in
+{% endblock %}
+
+{% block card %}
+<form class="form" method="post"
+      action="{% url 'user:login' %}{% if token %}?token={{ token|urlencode }}{% endif %}">
+  {% csrf_token %}
+
+  <h1 class="form__title">Welcome back</h1>
+  <p class="auth-card__subtitle">Log in to your account</p>
+
+  {% include 'accounts/_invite_notice.html' %}
+  {% include 'includes/form_errors.html' %}
+
+  {% include 'includes/field.html' with field=form.username label="Email" %}
+  {% include 'includes/field.html' with field=form.password label="Password" %}
+  <a class="form__link" href="{% url 'user:reset-password-request' %}">Forgot password?</a>
+
+  <button type="submit" class="btn btn--primary btn--block">Log in</button>
+
+  <p class="auth-card__switch">
+    Don't have an account?
+    <a href="{% url 'user:register' %}{% if token %}?token={{ token|urlencode }}{% endif %}">Create one</a>
+  </p>
+</form>
+{% endblock %}

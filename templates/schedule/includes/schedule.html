@@ -1,0 +1,74 @@
+<div class="schedule">
+  <nav class="week-nav" aria-label="Week navigation">
+    <a class="btn btn--soft week-nav__prev" href="{% url 'schedule:teacher-schedule' %}?week={{ prev_week_str }}" aria-label="Previous week">
+      ← <span class="week-nav__label">Previous</span>
+    </a>
+    <div class="week-nav__center">
+      <h1 class="week-nav__range">{{ start_of_week|date:"d.m" }} — {{ end_of_week|date:"d.m.Y" }}</h1>
+      {% if is_current_week %}
+        <span class="pill pill--muted">This week</span>
+      {% else %}
+        <a class="pill" href="{% url 'schedule:teacher-schedule' %}">Current week</a>
+      {% endif %}
+    </div>
+    <a class="btn btn--soft week-nav__next" href="{% url 'schedule:teacher-schedule' %}?week={{ next_week_str }}" aria-label="Next week">
+      <span class="week-nav__label">Next</span> →
+    </a>
+  </nav>
+
+  <div class="week card">
+    {% for day in schedule %}
+    <section class="day{% if day.is_today %} is-today{% endif %}">
+      <header class="day__head">
+        <span class="day__name">{{ day.date|date:"D" }}</span>
+        <span class="day__date">{{ day.date|date:"d.m" }}</span>
+        <span class="day__today">Today</span>
+      </header>
+
+      <div class="day__items">
+        {% for item in day.timeline %}
+          {% if item.type == 'GAP' %}
+            <button type="button" class="slot slot--free"
+                    hx-get="{% url 'schedule:lesson-create' %}?start={{ item.start_param }}"
+                    hx-target="#form-container"
+                    hx-swap="innerHTML"
+                    aria-label="Add a lesson at {{ item.start_datetime|time:'H:i' }}">
+              <span class="slot__title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                Free
+              </span>
+              <span class="slot__time">{{ item.start_datetime|time:"H:i" }} – {{ item.end_datetime|time:"H:i" }}</span>
+            </button>
+          {% else %}
+            <button type="button" class="slot slot--lesson slot--{{ item.status }}" data-panel-item
+                    {% if item.type == 'GROUP' %}
+                    hx-get="{% url 'schedule:group-lesson-update' pk=item.id %}"
+                    {% else %}
+                    hx-get="{% url 'schedule:lesson-update' pk=item.id %}"
+                    {% endif %}
+                    hx-target="#form-container"
+                    hx-swap="innerHTML"
+                    title="{{ item.status_display }}">
+              <span class="slot__time">{{ item.start_datetime|time:"H:i" }}</span>
+              <span class="slot__name">{{ item.name }}</span>
+              <span class="slot__meta">
+                {{ item.duration }} min
+                {% if item.type == 'GROUP' %}<span class="tag">Group</span>{% endif %}
+              </span>
+            </button>
+          {% endif %}
+        {% empty %}
+          <p class="day__empty">No free time</p>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </div>
+
+  <div class="legend" aria-hidden="true">
+    <span class="legend__item"><span class="legend__dot"></span>Planned</span>
+    <span class="legend__item"><span class="legend__dot legend__dot--finished"></span>Finished</span>
+    <span class="legend__item"><span class="legend__dot legend__dot--canceled"></span>Canceled</span>
+    <span class="legend__item"><span class="legend__dot legend__dot--free"></span>Free — click to add a lesson</span>
+  </div>
+</div>

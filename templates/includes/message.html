@@ -1,0 +1,26 @@
+{% comment %}
+  Informational message for a centered card (layouts/auth.html).
+  Usage: {% include 'includes/message.html' with tone="success" title="..." text="..." action_url=url action_label="..." %}
+  tone: success | info | error. secondary_url / secondary_label are optional.
+{% endcomment %}
+<div class="message">
+  <span class="message__icon message__icon--{{ tone|default:'info' }}" aria-hidden="true">
+    {% if tone == 'success' %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17l9-10"/></svg>
+    {% elif tone == 'error' %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 7v6M12 17h.01"/></svg>
+    {% else %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+    {% endif %}
+  </span>
+
+  <h1 class="message__title">{{ title }}</h1>
+  {% if text %}<p class="message__text">{{ text }}</p>{% endif %}
+
+  {% if action_url %}
+    <a href="{{ action_url }}" class="btn btn--primary btn--block">{{ action_label }}</a>
+  {% endif %}
+  {% if secondary_url %}
+    <a href="{{ secondary_url }}" class="btn btn--ghost btn--block">{{ secondary_label }}</a>
+  {% endif %}
+</div>

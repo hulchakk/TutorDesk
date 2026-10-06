@@ -1,0 +1,11 @@
+{% extends 'layouts/auth.html' %}
+
+{% block title %}
+  Link is not valid
+{% endblock %}
+
+{% block card %}
+  {% url 'user:reset-password-request' as request_url %}
+  {% url 'user:login' as login_url %}
+  {% include 'includes/message.html' with tone="error" title="This link is not valid" text="The password reset link is incorrect, has expired, or has already been used." action_url=request_url action_label="Request a new link" secondary_url=login_url secondary_label="Back to login" %}
+{% endblock %}

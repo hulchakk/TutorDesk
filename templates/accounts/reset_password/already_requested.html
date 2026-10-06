@@ -1,0 +1,10 @@
+{% extends 'layouts/auth.html' %}
+
+{% block title %}
+  Reset link already sent
+{% endblock %}
+
+{% block card %}
+  {% url 'user:login' as login_url %}
+  {% include 'includes/message.html' with tone="info" title="Link already sent" text="We've already sent you a password reset link. Check your inbox and spam folder — the link stays valid for a while." action_url=login_url action_label="Back to login" %}
+{% endblock %}

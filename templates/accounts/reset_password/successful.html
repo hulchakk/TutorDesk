@@ -1,0 +1,10 @@
+{% extends 'layouts/auth.html' %}
+
+{% block title %}
+  Password changed
+{% endblock %}
+
+{% block card %}
+  {% url 'user:login' as login_url %}
+  {% include 'includes/message.html' with tone="success" title="Password changed" text="Your password has been updated. Log in with your new password." action_url=login_url action_label="Log in" %}
+{% endblock %}

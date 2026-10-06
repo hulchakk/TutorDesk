@@ -1,0 +1,14 @@
+<form class="form"
+      hx-post="{% url 'schedule:lesson-update' pk=lesson.id %}"
+      hx-target="this"
+      hx-swap="outerHTML"
+      hx-disabled-elt="#form-container button[type=submit]">
+
+  <h2 class="form__title">Edit lesson</h2>
+
+  {% include 'schedule/forms/_lesson_fields.html' with party_field=form.student party_label="Student" %}
+
+  {% url 'schedule:lesson-create' as cancel_url %}
+  {% url 'schedule:lesson-delete' pk=lesson.id as delete_url %}
+  {% include 'schedule/forms/_edit_actions.html' with cancel_url=cancel_url delete_url=delete_url delete_confirm="Delete this lesson? This can’t be undone." %}
+</form>

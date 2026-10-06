@@ -1,0 +1,30 @@
+{% extends 'layouts/auth.html' %}
+
+{% block title %}
+  Create account
+{% endblock %}
+
+{% block card %}
+<form class="form" method="post"
+      action="{% url 'user:register' %}{% if token %}?token={{ token|urlencode }}{% endif %}">
+  {% csrf_token %}
+
+  <h1 class="form__title">Create account</h1>
+  <p class="auth-card__subtitle">It takes less than a minute</p>
+
+  {% include 'accounts/_invite_notice.html' %}
+  {% include 'includes/form_errors.html' %}
+
+  {% include 'includes/field.html' with field=form.name label="Name" %}
+  {% include 'includes/field.html' with field=form.email label="Email" %}
+  {% include 'includes/field.html' with field=form.password label="Password" %}
+  {% include 'includes/field.html' with field=form.repeat_password label="Repeat password" %}
+
+  <button type="submit" class="btn btn--primary btn--block">Create account</button>
+
+  <p class="auth-card__switch">
+    Already have an account?
+    <a href="{% url 'user:login' %}{% if token %}?token={{ token|urlencode }}{% endif %}">Log in</a>
+  </p>
+</form>
+{% endblock %}
