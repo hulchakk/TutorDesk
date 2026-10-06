@@ -151,7 +151,7 @@ class ActivateUserView(TemplateView):
                     user.save(update_fields=["is_active"])
                     token.delete()
                     success = True
-            except (ActivationToken.DoesNotExist, ValueError):
+            except (ActivationToken.DoesNotExist, ValueError, ValidationError):
                 success = False
 
         context["success"] = success
