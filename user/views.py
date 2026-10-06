@@ -1,5 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash, get_user_model
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -157,7 +159,7 @@ def logout_view(request) -> HttpResponse:
     return redirect("user:login")
 
 
-class UserMenuView(TemplateView):
+class UserMenuView(LoginRequiredMixin, TemplateView):
     template_name = "accounts/menu.html"
 
     def get_context_data(self, **kwargs):
@@ -168,6 +170,7 @@ class UserMenuView(TemplateView):
         return context
 
 
+@login_required
 def change_password_view(request):
     if request.method == "POST":
         form = ChangePasswordForm(user=request.user, data=request.POST)
