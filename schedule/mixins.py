@@ -1,9 +1,13 @@
+from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.http import HttpResponse
 
 
 class HTMXFormMixin:
+    # Shown as a toast after the redirect; may use %(field)s placeholders from cleaned_data.
+    success_message = ""
+
     def form_invalid(self, form) -> HttpResponse:
         response = super().form_invalid(form)
 
@@ -27,6 +31,9 @@ class HTMXFormMixin:
                 form.add_error(None, e)
 
             return self.form_invalid(form)
+
+        if self.success_message:
+            messages.success(self.request, self.success_message % form.cleaned_data)
 
         if self.request.htmx:
             success_url = self.get_success_url()
