@@ -13,6 +13,8 @@ from django.views.decorators.http import require_GET
 from django.views.generic import FormView, TemplateView
 
 from schedule.models import Student
+from services.notifications.email import EmailNotificationsService
+from services.notifications.exceptions import NotificationError
 from user.decorators import teacher_required
 from user.forms import RegisterForm, ChangePasswordForm, ResetPasswordForm
 from user.models import InviteToken, ActivationToken, ResetPasswordToken
@@ -103,25 +105,38 @@ class RegisterView(FormView):
         )
         return context
 
-    @transaction.atomic
     def form_valid(self, form):
-        user = form.save()
+        try:
+            with transaction.atomic():
+                user = form.save()
 
-        activation_token = ActivationToken.objects.create(user=user)
+                activation_token = ActivationToken.objects.create(user=user)
 
-        # TODO: send user activation url via email
+                token_id = self.request.POST.get("token") or self.request.GET.get(
+                    "token"
+                )
 
-        token_id = self.request.POST.get("token") or self.request.GET.get("token")
+                invite_token = find_invite_token(token_id)
 
-        invite_token = find_invite_token(token_id)
+                if invite_token:
+                    student = invite_token.student_profile
 
-        if invite_token:
-            student = invite_token.student_profile
+                    student.user = user
+                    student.save(update_fields=["user"])
 
-            student.user = user
-            student.save(update_fields=["user"])
+                    invite_token.delete()
 
-            invite_token.delete()
+                activation_link = self.request.build_absolute_uri(
+                    f"{reverse('user:activate-user')}?token={activation_token.id}"
+                )
+                EmailNotificationsService().send_activation_email(
+                    user.email, user.name, activation_link
+                )
+        except NotificationError:
+            form.add_error(
+                None, "We couldn't send the activation email. Please try again later."
+            )
+            return self.form_invalid(form)
 
         return super().form_valid(form)
 
